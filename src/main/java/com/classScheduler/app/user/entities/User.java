@@ -22,9 +22,11 @@ public class User {
         this.savedScheduleList.add(s);
     }
 
+    @Setter
+    @Getter
+    public class Advisor {
+        private String advisorName;
+    }
 
-
-
-
-
+    
 }
