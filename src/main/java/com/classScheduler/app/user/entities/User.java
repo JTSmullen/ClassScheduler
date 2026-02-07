@@ -28,5 +28,5 @@ public class User {
         private String advisorName;
     }
 
-    
+
 }
