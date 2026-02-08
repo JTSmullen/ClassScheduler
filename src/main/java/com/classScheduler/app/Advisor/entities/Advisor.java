@@ -1,6 +1,5 @@
-package com.classScheduler.app.user.entities;
+package com.classScheduler.app.Advisor.entities;
 
-import com.classScheduler.app.Advisor.entities.Advisor;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -9,17 +8,14 @@ import lombok.Setter;
 @Getter
 @Entity
 
-public class User {
+public class Advisor {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "user_id", nullable = false)
+    @Column(name = "advisor_id", nullable = false)
     private Long Id;
 
     @Column(name = "name", length = 20, nullable = false)
     private String name;
 
-    @Column(name = "advisor", nullable = false)
-    private Advisor advisor;
-    
 }
