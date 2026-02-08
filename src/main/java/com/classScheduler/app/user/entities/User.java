@@ -19,7 +19,9 @@ public class User {
     @Column(name = "name", length = 20, nullable = false)
     private String name;
 
-    @Column(name = "advisor", nullable = false)
+
+    @ManyToOne
+    @JoinColumn(name = "advisor")
     private Advisor advisor;
     
 }
