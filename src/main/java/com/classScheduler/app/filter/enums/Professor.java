@@ -1,4 +1,4 @@
-package com.classScheduler.app.search.entity;
+package com.classScheduler.app.filter.enums;
 
 public enum Professor {
     SMITH,
