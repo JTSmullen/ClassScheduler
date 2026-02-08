@@ -13,6 +13,7 @@ import java.util.List;
 public class CourseSection {
 
     @Id
+    @Column(name = "course_section_id")
     private int id;
 
     @ManyToOne

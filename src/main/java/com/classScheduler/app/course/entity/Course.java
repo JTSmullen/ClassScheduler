@@ -31,7 +31,7 @@ public abstract class Course {
     @Column(name = "department")
     protected Department department;
 
-    @OneToMany(mappedBy = "course")
+    @OneToMany(mappedBy = "course", fetch = FetchType.EAGER)
     private List<CourseSection> sections;
 
 }
