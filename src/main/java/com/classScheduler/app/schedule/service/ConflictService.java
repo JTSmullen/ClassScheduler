@@ -1,7 +1,7 @@
 package com.classScheduler.app.schedule.service;
 
 import com.classScheduler.app.schedule.entity.Schedule;
-import com.classScheduler.app.user.entity.User;
+import com.classScheduler.app.user.entities.User;
 
 import org.springframework.stereotype.Service;
 
