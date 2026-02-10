@@ -2,7 +2,7 @@ package com.classScheduler.app.schedule.entity;
 
 
 import com.classScheduler.app.course.entity.CourseSection;
-import com.classScheduler.app.user.entity.User;
+//import com.classScheduler.app.user.entities.User;
 
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -27,7 +27,7 @@ public class Schedule {
     @OneToMany(mappedBy = "course", fetch = FetchType.EAGER)
     private List<CourseSection> courses;
 
-    private User user;
+//    private User user;
 
     private boolean hasConflict;
 
