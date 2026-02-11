@@ -12,6 +12,10 @@ jobs:
     permissions:
       contents: read
 
+    defaults:
+      run:
+        working-directory: ./ClassBackend
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -24,6 +28,8 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
+        with:
+          build-root-directory: ClassBackend
 
       - name: Make Gradlew Executable
         run: chmod +x gradlew
@@ -36,4 +42,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: spring-boot-app
-          path: build/libs/*.jar
+          path: ClassBackend/build/libs/*.jar
