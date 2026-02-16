@@ -1,5 +1,9 @@
 package com.classScheduler.app.course.entity;
 
+/**
+ * @author George
+ */
+
 import com.classScheduler.app.filter.enums.CreditHours;
 import com.classScheduler.app.filter.enums.Department;
 
