@@ -6,6 +6,8 @@ import com.classScheduler.app.user.entities.User;
 
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class ScheduleService {
 
@@ -17,9 +19,9 @@ public class ScheduleService {
     }
 
     public CourseSection removeCourse(Schedule schedule, CourseSection section) {
-        /*
-            TODO: Remove Course to schedule | Check to see if conflict resolved
-         */
+        List<CourseSection> courses = schedule.getCourses();
+        courses.remove(section);
+        schedule.setCourses(courses);
         return null;
     }
 
