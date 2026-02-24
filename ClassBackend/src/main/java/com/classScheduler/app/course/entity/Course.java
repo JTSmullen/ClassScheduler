@@ -38,4 +38,46 @@ public abstract class Course {
     @OneToMany(mappedBy = "course", fetch = FetchType.EAGER)
     private List<CourseSection> sections;
 
+    // --- GETTERS AND SETTERS ---
+    public Course() {}
+
+    public Long getCourseID() {
+        return CourseID;
+    }
+
+    public void setCourseID(Long courseID) {
+        CourseID = courseID;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public CreditHours getCreditHours() {
+        return creditHours;
+    }
+
+    public void setCreditHours(CreditHours creditHours) {
+        this.creditHours = creditHours;
+    }
+
+    public Department getDepartment() {
+        return department;
+    }
+
+    public void setDepartment(Department department) {
+        this.department = department;
+    }
+
+    public List<CourseSection> getSections() {
+        return sections;
+    }
+
+    public void setSections(List<CourseSection> sections) {
+        this.sections = sections;
+    }
 }
