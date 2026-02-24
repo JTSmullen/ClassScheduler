@@ -1,39 +1,62 @@
 package com.classScheduler.app.course.entity;
 
-import jakarta.persistence.Embeddable;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+
 
 import java.sql.Time;
 
-@Embeddable
+@Entity
+@Getter
+@Setter
 public class ClassTime {
-    private String days;
-    private Time startTime;
-    private Time endTime;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String day;
+
+    @JsonProperty("start_time")
+    private String startTime;
+
+    @JsonProperty("end_time")
+    private String endTime;
 
     // --- GETTERS AND SETTERS ---
-    public ClassTime() {}
 
-    public String getDays() {
-        return days;
+    public Long getId() {
+        return id;
     }
 
-    public void setDays(String days) {
-        this.days = days;
+    public void setId(Long id) {
+        this.id = id;
     }
 
-    public Time getStartTime() {
+    public String getDay() {
+        return day;
+    }
+
+    public void setDay(String day) {
+        this.day = day;
+    }
+
+    public String getStartTime() {
         return startTime;
     }
 
-    public void setStartTime(Time startTime) {
+    public void setStartTime(String startTime) {
         this.startTime = startTime;
     }
 
-    public Time getEndTime() {
+    public String getEndTime() {
         return endTime;
     }
 
-    public void setEndTime(Time endTime) {
+    public void setEndTime(String endTime) {
         this.endTime = endTime;
     }
 }
