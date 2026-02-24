@@ -2,13 +2,23 @@ package com.classScheduler.app.schedule.service;
 
 import com.classScheduler.app.course.entity.CourseSection;
 import com.classScheduler.app.schedule.entity.Schedule;
+import com.classScheduler.app.schedule.repository.ScheduleRepository;
 import com.classScheduler.app.user.entities.User;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 public class ScheduleService {
+
+    private final ScheduleRepository scheduleRepo;
+
+    public ScheduleService(ScheduleRepository scheduleRepo) {
+        this.scheduleRepo = scheduleRepo;
+    }
 
     public CourseSection addCourse(Schedule schedule, CourseSection section) {
         /*
@@ -22,6 +32,11 @@ public class ScheduleService {
         /*
             TODO: Remove Course to schedule | Check to see if conflict resolved
          */
+
+        List<CourseSection> classes = schedule.getCourses();
+        classes.remove(section);
+        scheduleRepo.save(schedule);
+
         return null;
     }
 

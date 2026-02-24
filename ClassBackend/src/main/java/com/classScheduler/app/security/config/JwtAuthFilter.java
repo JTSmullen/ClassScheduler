@@ -10,19 +10,16 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
 @Component
-@Service
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
@@ -36,10 +33,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(
+    protected void doFilterInternal (
             @NonNull HttpServletRequest request,
             @NonNull HttpServletResponse response,
-            @NonNull FilterChain filterChain)
+            @NonNull FilterChain filterChain )
             throws ServletException, IOException {
 
         try {
@@ -63,7 +60,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         } catch (Exception e) {
 
-            logger.error("An error occurred while setting user authentication", e);
+            logger.error("filter error!", e);
 
         }
 
