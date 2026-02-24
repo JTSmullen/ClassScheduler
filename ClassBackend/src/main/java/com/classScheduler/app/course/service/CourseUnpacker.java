@@ -4,10 +4,14 @@ import com.classScheduler.app.course.entity.CourseData;
 import com.classScheduler.app.course.entity.CourseSection;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.stereotype.Component;
 
 import java.io.InputStream;
 import java.util.List;
 
+@Component
 public class CourseUnpacker {
 //    {
 //      "credits":3,
@@ -26,7 +30,8 @@ public class CourseUnpacker {
 //          {"day":"R","end_time":"16:45:00","start_time":"15:30:00"}
 //      ],
 //      "total_seats":30}
-    public static void main(String[] args) {
+    @EventListener
+    public void seed(ContextRefreshedEvent event) {
         try {
             ObjectMapper mapper = new ObjectMapper();
             mapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
