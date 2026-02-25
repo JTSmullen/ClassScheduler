@@ -1,6 +1,8 @@
 package com.classScheduler.app.course.entity;
 
 /**
+ * Entity containing grouped together info from CourseSections
+ *
  * @author George
  */
 

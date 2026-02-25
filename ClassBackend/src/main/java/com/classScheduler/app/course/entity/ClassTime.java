@@ -6,13 +6,20 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-
-import java.sql.Time;
-
+/**
+ * Entity containing info for a Course Sections time
+ *
+ * @author George Rule
+ */
 @Entity
 @Getter
 @Setter
 public class ClassTime {
+
+    // Example times:
+    //{"day":"T","end_time":"16:45:00","start_time":"15:30:00"}
+    //{"day":"R","end_time":"16:45:00","start_time":"15:30:00"}
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -24,4 +31,5 @@ public class ClassTime {
 
     @JsonProperty("end_time")
     private String endTime;
+
 }

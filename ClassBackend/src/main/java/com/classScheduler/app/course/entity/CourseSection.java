@@ -7,11 +7,34 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.List;
-
+/**
+ * Entity containing course all course information from a course in data_wolfe
+ *
+ * @author George Rule
+ */
 @Entity
 @Getter
 @Setter
 public class CourseSection {
+
+// Example CourseSection JSON:
+//    {
+//      "credits":3,
+//      "faculty":["Graybill, Keith B."],
+//      "is_lab":false,
+//      "is_open":true,
+//      "location":"SHAL 316",
+//      "name":"PRINCIPLES OF ACCOUNTING I",
+//      "number":201,
+//      "open_seats":1,
+//      "section":"A",
+//      "semester":"2023_Fall",
+//      "subject":"ACCT",
+//      "times":[
+//          {"day":"T","end_time":"16:45:00","start_time":"15:30:00"},
+//          {"day":"R","end_time":"16:45:00","start_time":"15:30:00"}
+//      ],
+//      "total_seats":30}
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
