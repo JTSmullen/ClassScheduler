@@ -31,11 +31,10 @@ public class ScheduleService {
         return null;
     }
 
-    public CourseSection removeCourse(Schedule schedule, CourseSection section) {
+    public void removeCourse(Schedule schedule, CourseSection section) {
         List<CourseSection> courses = schedule.getCourses();
         courses.remove(section);
         scheduleRepo.save(schedule);
-        return null;
     }
 
     public Schedule newSchedule(User user, String name) {
