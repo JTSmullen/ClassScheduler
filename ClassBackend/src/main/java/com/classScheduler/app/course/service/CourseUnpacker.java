@@ -10,6 +10,22 @@ import org.springframework.stereotype.Service;
 import java.io.InputStream;
 import java.util.List;
 
+/**
+ * Service responsible for loading and unpacking course data from a JSON resource file
+ * at application startup.
+ *
+ * <p>This component reads the {@code data_wolfe.json} file located in the
+ * {@code src/main/resources} directory, deserializes it into a {@link CourseData}
+ * object using Jackson, and extracts the list of {@link CourseSection} objects.
+ *
+ * <p>The loading process runs automatically after the Spring container initializes
+ * this bean, via the {@link jakarta.annotation.PostConstruct} lifecycle hook.
+ *
+ * <p>This class currently logs the number of sections loaded but may later be extended
+ * to persist course data into a database or cache.
+ *
+ * @author George Rule
+ */
 @Service
 public class CourseUnpacker {
 //    {
