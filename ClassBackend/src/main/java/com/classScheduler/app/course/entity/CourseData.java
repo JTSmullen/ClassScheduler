@@ -9,7 +9,6 @@ import java.util.List;
  * Entity containing the list of CourseSections and the date and time from the JSON data_wolfe
  * @author George Rule
  */
-@Entity
 @Getter
 @Setter
 public class CourseData {

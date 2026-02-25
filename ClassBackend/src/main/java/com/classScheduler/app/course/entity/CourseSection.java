@@ -66,9 +66,13 @@ public class CourseSection {
 
     private List<String> faculty;
 
-    @OneToMany(cascade = CascadeType.ALL)
-    @JoinColumn(name = "section_id")
-    private List<ClassTime> times;
+    @ElementCollection
+    @CollectionTable(
+            name = "section_times",
+            joinColumns = @JoinColumn(name = "section_id")
+    )
+    @Column(name = "time_value")
+    private List<String> times;
 
     @ManyToOne
     @JoinColumn(name = "course_id")
