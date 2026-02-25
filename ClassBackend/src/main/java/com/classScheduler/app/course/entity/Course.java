@@ -1,6 +1,8 @@
 package com.classScheduler.app.course.entity;
 
 /**
+ * Entity containing grouped together info from CourseSections
+ *
  * @author George
  */
 
@@ -17,25 +19,18 @@ import java.util.List;
 @Entity
 @Getter
 @Setter
-public abstract class Course {
+public class Course {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "course_id", nullable = false)
-    protected Long CourseID;
+    private Long id;
 
-    @Column(name = "name", length = 30, nullable = false)
-    protected String name;
+    private String subject;
+    private int number;
+    private String name;
+    private int credits;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "credit_hours")
-    protected CreditHours creditHours;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "department")
-    protected Department department;
-
-    @OneToMany(mappedBy = "course", fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL)
     private List<CourseSection> sections;
 
 }
