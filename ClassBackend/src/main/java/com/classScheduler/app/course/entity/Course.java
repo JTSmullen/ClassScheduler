@@ -1,8 +1,9 @@
 package com.classScheduler.app.course.entity;
 
 /**
- * @author George
+ * Entity containing grouped together info from CourseSections
  *
+ * @author George
  */
 
 import com.classScheduler.app.filter.enums.CreditHours;

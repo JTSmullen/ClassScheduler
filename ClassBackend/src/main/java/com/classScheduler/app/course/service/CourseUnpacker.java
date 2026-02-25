@@ -28,6 +28,7 @@ import java.util.List;
  */
 @Service
 public class CourseUnpacker {
+//    Example Course JSON
 //    {
 //      "credits":3,
 //      "faculty":["Graybill, Keith B."],
