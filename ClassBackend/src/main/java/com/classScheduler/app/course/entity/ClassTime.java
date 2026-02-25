@@ -6,14 +6,16 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.sql.Time;
+
 /**
  * Entity containing info for a Course Sections time
  *
  * @author George Rule
  */
-@Entity
 @Getter
 @Setter
+@Embeddable
 public class ClassTime {
 
     // Example times:
@@ -27,9 +29,9 @@ public class ClassTime {
     private String day;
 
     @JsonProperty("start_time")
-    private String startTime;
+    private Time startTime;
 
     @JsonProperty("end_time")
-    private String endTime;
+    private Time endTime;
 
 }
