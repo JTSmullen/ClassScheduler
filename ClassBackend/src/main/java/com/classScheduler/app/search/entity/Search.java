@@ -10,7 +10,7 @@ public class Search {
     protected Course results;
     protected Course filteredResults;
 
-    public Search() {
+    public Search(ArrayList<Course> results) {
         this.results = results;
         // no filters applied yet
         this.filteredResults = new ArrayList<>(results);
