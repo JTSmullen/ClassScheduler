@@ -24,11 +24,10 @@ public class ScheduleService {
         this.scheduleRepo = scheduleRepo;
     }
 
-    public CourseSection addCourse(Schedule schedule, CourseSection section) {
-        /*
-            TODO: Add Course to schedule | Check for conflict here
-         */
-        return null;
+    public void addCourse(Schedule schedule, CourseSection section) {
+        List<CourseSection> courses = schedule.getCourseSections();
+        courses.add(section);
+        scheduleRepo.save(schedule);
     }
 
     public void removeCourse(Schedule schedule, CourseSection section) {
