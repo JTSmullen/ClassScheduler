@@ -29,7 +29,7 @@ public class Schedule {
     @JoinTable(
             name = "schedule_courses",
             joinColumns = @JoinColumn(name = "schedule_id"),
-            inverseJoinColumns = @JoinColumn(name = "course_id")
+            inverseJoinColumns = @JoinColumn(name = "courseSection_id")
     )
     private List<CourseSection> courseSections;
 
