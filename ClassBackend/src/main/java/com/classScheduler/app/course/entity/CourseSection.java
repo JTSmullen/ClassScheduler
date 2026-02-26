@@ -16,7 +16,7 @@ import java.util.List;
 @Entity
 @Getter
 @Setter
-@Table(name = "CourseSections")
+@Table(name = "course_sections")
 public class CourseSection {
 
 // Example CourseSection JSON:
@@ -49,7 +49,7 @@ public class CourseSection {
 
     private int credits;
 
-    @ManyToMany(mappedBy = "CourseSections")
+    @ManyToMany(mappedBy = "courseSections")
     private List<Schedule> schedules;
 
     @JsonProperty("is_lab")

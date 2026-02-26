@@ -31,8 +31,8 @@ public class Course {
     private String name;
     private int credits;
 
-    @ManyToMany(mappedBy = "courses")
-    private List<Schedule> schedules;
+
+
 
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL)
     private List<CourseSection> sections;

@@ -15,6 +15,7 @@ import java.util.List;
 @Entity
 @Setter
 @Getter
+@Table(name = "Schedule")
 public class Schedule {
 
     @Id
@@ -31,6 +32,7 @@ public class Schedule {
             joinColumns = @JoinColumn(name = "schedule_id"),
             inverseJoinColumns = @JoinColumn(name = "courseSection_id")
     )
+
     private List<CourseSection> courseSections;
 
     @OneToOne
