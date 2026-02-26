@@ -32,7 +32,7 @@ public class ScheduleService {
     }
 
     public void removeCourse(Schedule schedule, CourseSection section) {
-        List<CourseSection> courses = schedule.getCourses();
+        List<CourseSection> courses = schedule.getCourseSections();
         courses.remove(section);
         scheduleRepo.save(schedule);
     }
