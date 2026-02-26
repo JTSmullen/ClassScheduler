@@ -8,20 +8,22 @@ import lombok.Setter;
 @Setter
 @Getter
 @Entity
-
+@Table(name = "users")
 public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "user_id", nullable = false)
-    private Long Id;
+    private Long id;
 
     @Column(name = "name", length = 20, nullable = false)
     private String name;
 
-
-    @ManyToOne
-    @JoinColumn(name = "advisor")
-    private Advisor advisor;
+    @Column(name = "password_hash", nullable = false)
+    private String passwordHash;
+//
+//    @ManyToOne
+//    @JoinColumn(name = "advisor")
+//    private Advisor advisor;
     
 }

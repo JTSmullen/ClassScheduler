@@ -5,6 +5,9 @@ import com.classScheduler.app.schedule.entity.Schedule;
 import com.classScheduler.app.user.entities.User;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 public class ScheduleService {
@@ -16,10 +19,12 @@ public class ScheduleService {
         return null;
     }
 
+    @Transactional
     public CourseSection removeCourse(Schedule schedule, CourseSection section) {
         /*
             TODO: Remove Course to schedule | Check to see if conflict resolved
          */
+
         return null;
     }
 

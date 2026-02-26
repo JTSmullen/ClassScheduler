@@ -1,7 +1,7 @@
 package com.classScheduler.app.schedule.entity;
 
 
-import com.classScheduler.app.course.entity.CourseSection;
+import com.classScheduler.app.course.entity.Course;
 import com.classScheduler.app.user.entities.User;
 
 import jakarta.persistence.*;
@@ -24,8 +24,13 @@ public class Schedule {
     @Column(name = "name", length = 20, nullable = false)
     private String name;
 
-    @OneToMany(mappedBy = "course", fetch = FetchType.EAGER)
-    private List<CourseSection> courses;
+    @ManyToMany
+    @JoinTable(
+            name = "schedule_courses",
+            joinColumns = @JoinColumn(name = "schedule_id"),
+            inverseJoinColumns = @JoinColumn(name = "course_id")
+    )
+    private List<Course> courses;
 
     @OneToOne
     @JoinColumn(name = "user")
