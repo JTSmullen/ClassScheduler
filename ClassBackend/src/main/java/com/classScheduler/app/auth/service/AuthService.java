@@ -2,6 +2,7 @@ package com.classScheduler.app.auth.service;
 
 import com.classScheduler.app.auth.dto.LoginRequest;
 import com.classScheduler.app.auth.dto.LoginResponse;
+import com.classScheduler.app.auth.dto.RegisterRequest;
 import com.classScheduler.app.user.entities.User;
 import com.classScheduler.app.user.repository.UserRepository;
 import com.classScheduler.app.security.util.JwtUtil;
@@ -21,11 +22,14 @@ public class AuthService {
     AuthenticationManager authenticationManager;
 
     @Transactional
-    public User registerUser(String username, String password) {
+    public User registerUser(RegisterRequest registerRequest) {
 
         User user = new User();
-        user.setName(username);
-        user.setPasswordHash(passwordEncoder.encode(password));
+        user.setName(registerRequest.getUsername());
+        user.setPasswordHash(passwordEncoder.encode(registerRequest.getPassword()));
+        user.setFirstName(registerRequest.getFirstName());
+        user.setLastName(registerRequest.getLastName());
+        user.setEmail(registerRequest.getEmail());
 
         userRepository.save(user);
 
