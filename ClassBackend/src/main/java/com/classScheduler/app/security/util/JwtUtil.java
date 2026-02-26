@@ -26,7 +26,7 @@ public class JwtUtil {
     private final SecretKey key;
 
     private long getKeyExpiration() {
-        ZoneId userZone = ZoneId.of("America/NewYork");
+        ZoneId userZone = ZoneId.of("America/New_York");
         ZonedDateTime now = ZonedDateTime.now(userZone);
         ZonedDateTime expirationTime = now.plusYears(1);
 
