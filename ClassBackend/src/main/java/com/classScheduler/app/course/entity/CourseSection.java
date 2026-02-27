@@ -72,7 +72,7 @@ public class CourseSection {
             joinColumns = @JoinColumn(name = "section_id")
     )
     @Column(name = "time_value")
-    private List<String> times;
+    private List<ClassTime> times;
 
     @ManyToOne
     @JoinColumn(name = "course_id")
