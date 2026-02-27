@@ -2,6 +2,7 @@ package com.classScheduler.app.schedule.entity;
 
 
 import com.classScheduler.app.course.entity.Course;
+import com.classScheduler.app.course.entity.CourseSection;
 import com.classScheduler.app.user.entities.User;
 
 import jakarta.persistence.*;
@@ -14,6 +15,7 @@ import java.util.List;
 @Entity
 @Setter
 @Getter
+@Table(name = "Schedule")
 public class Schedule {
 
     @Id
@@ -28,9 +30,10 @@ public class Schedule {
     @JoinTable(
             name = "schedule_courses",
             joinColumns = @JoinColumn(name = "schedule_id"),
-            inverseJoinColumns = @JoinColumn(name = "course_id")
+            inverseJoinColumns = @JoinColumn(name = "courseSection_id")
     )
-    private List<Course> courses;
+
+    private List<CourseSection> courseSections;
 
     @OneToOne
     @JoinColumn(name = "user")
