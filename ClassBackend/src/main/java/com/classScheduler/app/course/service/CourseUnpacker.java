@@ -66,4 +66,8 @@ public class CourseUnpacker {
             e.printStackTrace();
         }
     }
+
+    public List<CourseSection> getSections() {
+        return sections;
+    }
 }
