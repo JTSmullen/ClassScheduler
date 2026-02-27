@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.sql.Time;
+import java.time.LocalTime;
 
 /**
  * Entity containing info for a Course Sections time
@@ -29,9 +30,9 @@ public class ClassTime {
     private String day;
 
     @JsonProperty("start_time")
-    private Time startTime;
+    private LocalTime startTime;
 
     @JsonProperty("end_time")
-    private Time endTime;
+    private LocalTime endTime;
 
 }
