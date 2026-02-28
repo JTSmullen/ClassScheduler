@@ -13,10 +13,7 @@ import java.util.List;
 public class ConflictService {
 
     public boolean sameClassTime(ClassTime t1, ClassTime t2) {
-        if (t1.getStartTime().equals(t2.getStartTime()) && t1.getDay().equals(t2.getDay())) {
-            return true;
-        }
-        return false;
+        return t1.getStartTime().equals(t2.getStartTime()) && t1.getDay().equals(t2.getDay());
     }
 
     public boolean checkConflict(Schedule schedule) {
