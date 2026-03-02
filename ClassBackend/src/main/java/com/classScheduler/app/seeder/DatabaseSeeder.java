@@ -5,6 +5,7 @@ import com.classScheduler.app.course.entity.Course;
 import com.classScheduler.app.course.entity.CourseSection;
 import com.classScheduler.app.course.repository.CourseRepository;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +43,7 @@ public class DatabaseSeeder implements CommandLineRunner {
     private void dataSeed() {
 
         try {
+
             InputStream stream = getClass().getClassLoader().getResourceAsStream("data_wolfe.json");
 
             if (stream == null) {
@@ -49,10 +51,27 @@ public class DatabaseSeeder implements CommandLineRunner {
                 return;
             }
 
-            List<CourseSectionDTO> sections = objectMapper.readValue(
-                    stream,
-                    new TypeReference<List<CourseSectionDTO>>() {}
-            );
+            JsonNode root = objectMapper.readTree(stream);
+            List<CourseSectionDTO> sections = new ArrayList<>();
+
+            if (root.isArray()) {
+                sections = objectMapper.convertValue(root, new TypeReference<List<CourseSectionDTO>>() {});
+            } else if (root.isObject()) {
+                List<CourseSectionDTO> finalSections = sections;
+                root.elements().forEachRemaining(node -> {
+                    try {
+                        if (node.isArray()) {
+                            List<CourseSectionDTO> innerList = objectMapper.convertValue(node, new TypeReference<List<CourseSectionDTO>>() {});
+                            finalSections.addAll(innerList);
+                        } else if (node.isObject()) {
+                            CourseSectionDTO dto = objectMapper.treeToValue(node, CourseSectionDTO.class);
+                            finalSections.add(dto);
+                        }
+                    } catch (Exception e) {
+                        System.out.println("Could not parse JSON node");
+                    }
+                });
+            }
 
             Map<String, Course> courseMap = new HashMap<>();
 
@@ -105,6 +124,7 @@ public class DatabaseSeeder implements CommandLineRunner {
 
         } catch (Exception e) {
             System.out.println("Error while seeding");
+            e.printStackTrace();
         }
     }
 }
