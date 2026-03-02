@@ -1,12 +1,12 @@
 package com.classScheduler.app.seeder;
 
-import aj.org.objectweb.asm.TypeReference;
 import com.classScheduler.app.course.dto.CourseSectionDTO;
 import com.classScheduler.app.course.entity.Course;
 import com.classScheduler.app.course.entity.CourseSection;
 import com.classScheduler.app.course.repository.CourseRepository;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -41,7 +41,7 @@ public class DatabaseSeeder {
     private void dataSeed() {
 
         try {
-            InputStream stream = getClass().getClassLoader().getResourceAsStream("data_wolfe.json"))
+            InputStream stream = getClass().getClassLoader().getResourceAsStream("data_wolfe.json");
 
             if (stream == null) {
                 System.out.println("No Json found");
