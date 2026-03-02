@@ -6,10 +6,6 @@ package com.classScheduler.app.course.entity;
  * @author George
  */
 
-import com.classScheduler.app.filter.enums.CreditHours;
-import com.classScheduler.app.filter.enums.Department;
-
-import com.classScheduler.app.schedule.entity.Schedule;
 import jakarta.persistence.*;
 
 import lombok.Getter;
@@ -30,9 +26,6 @@ public class Course {
     private int number;
     private String name;
     private int credits;
-
-
-
 
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL)
     private List<CourseSection> sections;

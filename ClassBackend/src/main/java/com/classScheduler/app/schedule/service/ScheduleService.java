@@ -13,6 +13,7 @@ import java.util.List;
 
 import com.classScheduler.app.schedule.entity.Schedule;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.transaction.annotation.Transactional;
 
 
 @Service
@@ -51,10 +52,20 @@ public class ScheduleService {
         return null;
     }
 
-    public Schedule saveSchedule(Schedule schedule) {
-        /*
-            TODO: Save a Schedule To the User
-         */
-        return null;
+    /**
+     * Saves a users schedule
+     *
+     * @param schedule the current schedule the user is on to save
+     * @return boolean for successful save or not, boolean response will be sent to frontend
+     *         via DTO
+     */
+    @Transactional
+    public boolean saveSchedule(Schedule schedule) {
+        try {
+            scheduleRepo.save(schedule);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 }
