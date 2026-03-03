@@ -42,10 +42,10 @@ public class ScheduleService {
     }
 
     public Schedule newSchedule(User user, String name) {
-        /*
-            TODO: Create a new schedule for User with name
-         */
-        return null;
+        Schedule schedule = new Schedule();
+        schedule.setName(name);
+        schedule.setUser(user);
+        return schedule;
     }
 
 
