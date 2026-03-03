@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.sql.Time;
+import java.time.LocalTime;
 
 /**
  * Entity containing info for a Course Sections time
@@ -22,10 +23,7 @@ public class ClassTime {
     //{"day":"T","end_time":"16:45:00","start_time":"15:30:00"}
     //{"day":"R","end_time":"16:45:00","start_time":"15:30:00"}
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
+    @Column(name = "class_day")
     private String day;
 
     @JsonProperty("start_time")
