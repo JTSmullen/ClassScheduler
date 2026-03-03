@@ -6,27 +6,30 @@ import com.classScheduler.app.schedule.dto.NewScheduleRequest;
 import com.classScheduler.app.schedule.dto.ScheduleDTO;
 import com.classScheduler.app.schedule.entity.Schedule;
 import com.classScheduler.app.schedule.repository.ScheduleRepository;
+import com.classScheduler.app.security.service.CustomUserDetailsService;
+import com.classScheduler.app.security.util.JwtUtil;
+import com.classScheduler.app.security.util.SecurityUtil;
 import com.classScheduler.app.user.dto.UserDTO;
-import com.classScheduler.app.user.entities.User;
 
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 
-import com.classScheduler.app.schedule.entity.Schedule;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.transaction.annotation.Transactional;
-
 
 @Service
 public class ScheduleService {
 
     private final ScheduleRepository scheduleRepo;
+    private final SecurityUtil securityUtil;
 
-    public ScheduleService(ScheduleRepository scheduleRepo) {
+    public ScheduleService(ScheduleRepository scheduleRepo, SecurityUtil securityUtil) {
+
         this.scheduleRepo = scheduleRepo;
+        this.securityUtil = securityUtil;
+
     }
 
     public CourseSection addCourse(Schedule schedule, CourseSection section) {
@@ -42,13 +45,18 @@ public class ScheduleService {
         scheduleRepo.save(schedule);
     }
 
-    public Schedule newSchedule(NewScheduleRequest newScheduleRequest) {
+    @Transactional
+    public ScheduleDTO newSchedule(NewScheduleRequest newScheduleRequest) {
         Schedule schedule = new Schedule();
         schedule.setName(newScheduleRequest.getName());
-        schedule.setUser(newScheduleRequest.getUser());
-        return schedule;
-    }
+        schedule.setUser(securityUtil.getCurrentUser().orElseThrow());
+        schedule.setCourseSections(new ArrayList<>());
+        schedule.setHasConflict(false);
 
+        scheduleRepo.save(schedule);
+
+        return loadSchedule(schedule.getId());
+    }
 
     public ScheduleDTO loadSchedule(Long Id) {
 

@@ -8,7 +8,6 @@ import lombok.Setter;
 @Setter
 public class NewScheduleRequest {
 
-    private User user;
     private String name;
 
 }
