@@ -46,10 +46,9 @@ public class ScheduleService {
     }
 
     public Schedule loadSchedule(Long Id) {
-        /*
-            TODO: Load a Schedule by the Id
-         */
-        return null;
+
+        return scheduleRepo.findById(Id).orElseThrow(() -> new RuntimeException("Schedule not found!"));
+
     }
 
     /**
