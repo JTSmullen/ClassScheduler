@@ -2,6 +2,7 @@ package com.classScheduler.app.schedule.service;
 
 import com.classScheduler.app.course.dto.CourseSectionDTO;
 import com.classScheduler.app.course.entity.CourseSection;
+import com.classScheduler.app.schedule.dto.NewScheduleRequest;
 import com.classScheduler.app.schedule.dto.ScheduleDTO;
 import com.classScheduler.app.schedule.entity.Schedule;
 import com.classScheduler.app.schedule.repository.ScheduleRepository;
@@ -41,10 +42,10 @@ public class ScheduleService {
         scheduleRepo.save(schedule);
     }
 
-    public Schedule newSchedule(User user, String name) {
+    public Schedule newSchedule(NewScheduleRequest newScheduleRequest) {
         Schedule schedule = new Schedule();
-        schedule.setName(name);
-        schedule.setUser(user);
+        schedule.setName(newScheduleRequest.getName());
+        schedule.setUser(newScheduleRequest.getUser());
         return schedule;
     }
 
