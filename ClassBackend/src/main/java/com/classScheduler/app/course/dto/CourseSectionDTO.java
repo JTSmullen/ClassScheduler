@@ -4,12 +4,14 @@ import com.classScheduler.app.course.entity.ClassTime;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import java.util.List;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
+@AllArgsConstructor
 public class CourseSectionDTO {
 
     private String subject;
