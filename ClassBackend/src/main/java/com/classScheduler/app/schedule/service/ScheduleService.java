@@ -58,6 +58,7 @@ public class ScheduleService {
         return loadSchedule(schedule.getId());
     }
 
+    @Transactional
     public ScheduleDTO loadSchedule(Long Id) {
 
         Schedule schedule = scheduleRepo.findById(Id).orElseThrow(() -> new RuntimeException("Schedule not found!"));
