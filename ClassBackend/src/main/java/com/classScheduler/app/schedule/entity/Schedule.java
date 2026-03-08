@@ -1,7 +1,5 @@
 package com.classScheduler.app.schedule.entity;
 
-
-import com.classScheduler.app.course.entity.Course;
 import com.classScheduler.app.course.entity.CourseSection;
 import com.classScheduler.app.user.entities.User;
 
@@ -11,7 +9,6 @@ import lombok.Setter;
 
 import java.sql.Time;
 import java.util.List;
-import java.util.Optional;
 
 @Entity
 @Setter
@@ -36,7 +33,7 @@ public class Schedule {
 
     private List<CourseSection> courseSections;
 
-    @OneToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 
