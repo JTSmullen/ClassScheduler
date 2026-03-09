@@ -28,12 +28,14 @@ public class ScheduleService {
     public void addCourse(Schedule schedule, CourseSection section) {
         List<CourseSection> courses = schedule.getCourseSections();
         courses.add(section);
+        schedule.setCourseSections(courses);
         scheduleRepo.save(schedule);
     }
 
     public void removeCourse(Schedule schedule, CourseSection section) {
         List<CourseSection> courses = schedule.getCourseSections();
         courses.remove(section);
+        schedule.setCourseSections(courses);
         scheduleRepo.save(schedule);
     }
 
