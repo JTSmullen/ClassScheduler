@@ -11,6 +11,8 @@ import com.classScheduler.app.security.util.JwtUtil;
 import com.classScheduler.app.security.util.SecurityUtil;
 import com.classScheduler.app.user.dto.UserDTO;
 
+import com.classScheduler.app.user.entities.User;
+import com.classScheduler.app.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -24,11 +26,13 @@ public class ScheduleService {
 
     private final ScheduleRepository scheduleRepo;
     private final SecurityUtil securityUtil;
+    private final UserRepository userRepository;
 
-    public ScheduleService(ScheduleRepository scheduleRepo, SecurityUtil securityUtil) {
+    public ScheduleService(ScheduleRepository scheduleRepo, SecurityUtil securityUtil, UserRepository userRepository) {
 
         this.scheduleRepo = scheduleRepo;
         this.securityUtil = securityUtil;
+        this.userRepository = userRepository;
 
     }
 
@@ -47,9 +51,12 @@ public class ScheduleService {
 
     @Transactional
     public ScheduleDTO newSchedule(NewScheduleRequest newScheduleRequest) {
+        Long userId = securityUtil.getCurrentUser().orElseThrow().getId();
+        User user = userRepository.findById(userId).orElseThrow();
+
         Schedule schedule = new Schedule();
         schedule.setName(newScheduleRequest.getName());
-        schedule.setUser(securityUtil.getCurrentUser().orElseThrow());
+        schedule.setUser(user);
         schedule.setCourseSections(new ArrayList<>());
         schedule.setHasConflict(false);
 
@@ -61,7 +68,10 @@ public class ScheduleService {
     @Transactional
     public ScheduleDTO loadSchedule(Long Id) {
 
-        Schedule schedule = scheduleRepo.findById(Id).orElseThrow(() -> new RuntimeException("Schedule not found!"));
+        User currentUser = securityUtil.getCurrentUser().orElseThrow();
+
+        Schedule schedule = scheduleRepo.findByIdAndUser(Id, currentUser)
+                .orElseThrow(() -> new RuntimeException("Schedule not found or you do not have permission to access it."));
 
         List<CourseSectionDTO> sections = schedule.getCourseSections()
                 .stream()

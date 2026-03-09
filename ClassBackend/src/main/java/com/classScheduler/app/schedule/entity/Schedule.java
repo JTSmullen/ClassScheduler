@@ -21,7 +21,7 @@ public class Schedule {
     @Column(name = "schedule_id", nullable = false)
     private Long Id;
 
-    @Column(name = "name", length = 20, nullable = false)
+    @Column(name = "name", length = 99, nullable = false)
     private String name;
 
     @ManyToMany
