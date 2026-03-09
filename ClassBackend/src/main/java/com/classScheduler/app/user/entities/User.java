@@ -1,9 +1,13 @@
 package com.classScheduler.app.user.entities;
 
 import com.classScheduler.app.Advisor.entities.Advisor;
+import com.classScheduler.app.schedule.entity.Schedule;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Setter
 @Getter
@@ -31,8 +35,7 @@ public class User {
     @Column(name = "email", nullable = false)
     private String email;
 
-//    @ManyToOne
-//    @JoinColumn(name = "advisor")
-//    private Advisor advisor;
-    
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Schedule> schedules = new ArrayList<>();
+
 }
