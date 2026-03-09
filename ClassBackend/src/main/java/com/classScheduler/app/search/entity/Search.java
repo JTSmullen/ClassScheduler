@@ -10,12 +10,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Search {
+    private Set<String> keywords;
     private ArrayList<CourseSection> results;
     private ArrayList<CourseSection> filteredResults;
 
-    public Search(ArrayList<CourseSection> results) {
+    public Search(Set<String> keywords) {
+        this.keywords = keywords;
+        results = new ArrayList<CourseSection>();
+        filteredResults = new Arraylist<CourseSection>();
+    }
+
+    public ArrayList<CourseSection> getResults(){
+        return results;
+    }
+    public void setResultS(Arraylist<CourseSection> results) {
         this.results = results;
-        // no filters applied yet
-        this.filteredResults = new ArrayList<>(results);
     }
 }
