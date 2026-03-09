@@ -8,12 +8,28 @@ import com.classScheduler.app.user.entities.User;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class ConflictService {
 
-    public boolean sameClassTime(ClassTime t1, ClassTime t2) {
-        return t1.getStartTime().equals(t2.getStartTime()) && t1.getDay().equals(t2.getDay());
+    public boolean overlapClassTime(ClassTime t1, ClassTime t2) {
+        if (Objects.equals(t1.getDay(), t2.getDay())) {
+            if (t1.getStartTime().isAfter(t2.getStartTime()) || t1.getStartTime().equals(t2.getStartTime())) {
+                if (t1.getStartTime().isBefore(t2.getEndTime())) {
+                    return true;
+                }
+            }
+        }
+
+        if (Objects.equals(t1.getDay(), t2.getDay())) {
+            if (t2.getStartTime().isAfter(t1.getStartTime()) || t2.getStartTime().equals(t1.getStartTime())) {
+                if (t2.getStartTime().isBefore(t1.getEndTime())) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public boolean checkConflict(Schedule schedule) {
@@ -27,7 +43,7 @@ public class ConflictService {
                     for (int k = 0; k < iTimes.size(); k++) {
                         for (int l = 0; l < jTimes.size(); l++) {
                             if (k != l) {
-                                if (sameClassTime(iTimes.get(k), jTimes.get(l))) {
+                                if (overlapClassTime(iTimes.get(k), jTimes.get(l))) {
                                     return true;
                                 }
                             }
