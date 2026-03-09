@@ -35,7 +35,7 @@ public class Schedule {
     private List<CourseSection> courseSections;
 
     @OneToOne
-    @JoinColumn(name = "user")
+    @JoinColumn(name = "user_id")
     private User user;
 
     private boolean hasConflict;
