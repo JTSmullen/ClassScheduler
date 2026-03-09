@@ -1,0 +1,6 @@
+2026-03-08 03:13:40.178174-04:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLDataException: Value too long for column "NAME CHARACTER VARYING(20)": "'Victim''s Private Schedule' (25)"; SQL statement:
+insert into schedule (has_conflict,last_save,name,user_id,schedule_id) values (?,?,?,?,default) [22001-224]
+2026-03-08 03:21:52.779408-04:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLDataException: Value too long for column "NAME CHARACTER VARYING(20)": "'Victim''s Private Schedule' (25)"; SQL statement:
+insert into schedule (has_conflict,last_save,name,user_id,schedule_id) values (?,?,?,?,default) [22001-224]
