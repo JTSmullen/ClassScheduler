@@ -1,6 +1,7 @@
 package com.classScheduler.app.course.entity;
 
 import com.classScheduler.app.filter.enums.Professor;
+import com.classScheduler.app.schedule.entity.Schedule;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -15,6 +16,7 @@ import java.util.List;
 @Entity
 @Getter
 @Setter
+@Table(name = "course_sections")
 public class CourseSection {
 
 // Example CourseSection JSON:
@@ -38,6 +40,7 @@ public class CourseSection {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "courseSection_id", nullable = false)
     private Long id;
 
     private String subject;        // "ACCT"
@@ -45,6 +48,9 @@ public class CourseSection {
     private String name;           // "PRINCIPLES OF ACCOUNTING I"
 
     private int credits;
+
+    @ManyToMany(mappedBy = "courseSections")
+    private List<Schedule> schedules;
 
     @JsonProperty("is_lab")
     private boolean isLab;
