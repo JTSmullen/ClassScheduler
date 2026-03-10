@@ -1,5 +1,7 @@
 package com.classScheduler.app.schedule.controller;
 
+import com.classScheduler.app.course.entity.CourseSection;
+import com.classScheduler.app.schedule.dto.AddCourseRequest;
 import com.classScheduler.app.schedule.dto.LoadScheduleRequest;
 import com.classScheduler.app.schedule.dto.NewScheduleRequest;
 import com.classScheduler.app.schedule.dto.ScheduleDTO;
@@ -34,6 +36,16 @@ public class ScheduleController {
         ScheduleDTO schedule = scheduleService.loadSchedule(loadScheduleRequest.getId());
         return ResponseEntity.ok(schedule);
 
+    }
+
+    @PostMapping("add")
+    public ResponseEntity<ScheduleDTO> addCourse(@Valid @RequestBody AddCourseRequest addCourseRequest) {
+        ScheduleDTO updatedSchedule = scheduleService.addCourse(
+                addCourseRequest.getSchedule_id(),
+                addCourseRequest.getCourse_id()
+        );
+
+        return ResponseEntity.ok(updatedSchedule);
     }
 
 }

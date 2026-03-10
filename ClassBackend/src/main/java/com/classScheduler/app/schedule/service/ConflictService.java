@@ -12,7 +12,11 @@ import java.util.Objects;
 
 @Service
 public class ConflictService {
-
+/**
+overlapClassTime takes two ClassTime objects
+and compares them to see if they overlap.
+@return boolean (true if there is a conflict and false if not)
+ */
     public boolean overlapClassTime(ClassTime t1, ClassTime t2) {
         if (Objects.equals(t1.getDay(), t2.getDay())) {
             if (t1.getStartTime().isAfter(t2.getStartTime()) || t1.getStartTime().equals(t2.getStartTime())) {
@@ -32,6 +36,11 @@ public class ConflictService {
         return false;
     }
 
+    /**
+     * checks the list of CourseSections in schedule for conflicts
+     * @param schedule is the schedule being checked
+     * @return boolean
+     */
     public boolean checkConflict(Schedule schedule) {
 
         List<CourseSection> c = schedule.getCourseSections();
