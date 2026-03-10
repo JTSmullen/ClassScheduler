@@ -45,12 +45,12 @@ public class ScheduleService {
 
     @Transactional
     public ScheduleDTO addCourse(Long scheduleId, Long sectionId) {
-        // 1. Fetch the Schedule (using your existing security logic)
+        // 1. Fetch the Schedule
         User currentUser = securityUtil.getCurrentUser().orElseThrow();
         Schedule schedule = scheduleRepo.findByIdAndUser(scheduleId, currentUser)
                 .orElseThrow(() -> new RuntimeException("Schedule not found"));
 
-        // 2. Fetch the Section (You will need a CourseSectionRepository)
+        // 2. Fetch the Section
         CourseSection section = courseSectionRepo.findById(sectionId)
                 .orElseThrow(() -> new RuntimeException("Section not found"));
 
@@ -66,12 +66,12 @@ public class ScheduleService {
 
     @Transactional
     public ScheduleDTO removeCourse(Long scheduleId, Long sectionId) {
-        // 1. Fetch the Schedule (using your existing security logic)
+        // 1. Fetch the Schedule
         User currentUser = securityUtil.getCurrentUser().orElseThrow();
         Schedule schedule = scheduleRepo.findByIdAndUser(scheduleId, currentUser)
                 .orElseThrow(() -> new RuntimeException("Schedule not found"));
 
-        // 2. Fetch the Section (You will need a CourseSectionRepository)
+        // 2. Fetch the Section
         CourseSection section = courseSectionRepo.findById(sectionId)
                 .orElseThrow(() -> new RuntimeException("Section not found"));
 
