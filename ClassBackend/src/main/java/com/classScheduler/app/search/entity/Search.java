@@ -24,7 +24,7 @@ public class Search {
     public ArrayList<CourseSection> getResults(){
         return results;
     }
-    public void setResultS(ArrayList<CourseSection> results) {
+    public void setResults(ArrayList<CourseSection> results) {
         this.results = results;
     }
 }

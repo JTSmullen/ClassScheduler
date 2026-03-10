@@ -5,7 +5,7 @@ import com.classScheduler.app.filter.enums.Department;
 import com.classScheduler.app.filter.enums.CourseCode;
 import com.classScheduler.app.filter.enums.Professor;
 import com.classScheduler.app.course.entity.CourseSection;
-import com.classScheduler.app.course.repository.CourseRepository;
+import com.classScheduler.app.course.repository.CourseSectionRepository;
 import com.classScheduler.app.search.entity.Search;
 
 import org.springframework.stereotype.Service;
@@ -17,8 +17,8 @@ import java.util.List;
 
 @Service
 public class SearchService {
-    private final CourseRepository repository;
-    public SearchService(CourseRepository repository) {
+    private final CourseSectionRepository repository;
+    public SearchService(CourseSectionRepository repository) {
         this.repository = repository;
     }
 
