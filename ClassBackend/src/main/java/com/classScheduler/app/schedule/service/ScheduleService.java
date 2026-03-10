@@ -2,6 +2,8 @@ package com.classScheduler.app.schedule.service;
 
 import com.classScheduler.app.course.dto.CourseSectionDTO;
 import com.classScheduler.app.course.entity.CourseSection;
+import com.classScheduler.app.course.repository.CourseRepository;
+import com.classScheduler.app.course.repository.CourseSectionRepo;
 import com.classScheduler.app.schedule.dto.NewScheduleRequest;
 import com.classScheduler.app.schedule.dto.ScheduleDTO;
 import com.classScheduler.app.schedule.entity.Schedule;
@@ -25,28 +27,62 @@ import org.springframework.transaction.annotation.Transactional;
 public class ScheduleService {
 
     private final ScheduleRepository scheduleRepo;
+    private final CourseRepository courseRepo;
     private final SecurityUtil securityUtil;
     private final UserRepository userRepository;
+    private final CourseSectionRepo courseSectionRepo;
 
-    public ScheduleService(ScheduleRepository scheduleRepo, SecurityUtil securityUtil, UserRepository userRepository) {
+    public ScheduleService(ScheduleRepository scheduleRepo, CourseRepository courseRepo, SecurityUtil securityUtil, UserRepository userRepository, CourseSectionRepo courseSectionRepo) {
 
         this.scheduleRepo = scheduleRepo;
+        this.courseRepo = courseRepo;
         this.securityUtil = securityUtil;
         this.userRepository = userRepository;
+        this.courseSectionRepo = courseSectionRepo;
+
 
     }
 
-    public CourseSection addCourse(Schedule schedule, CourseSection section) {
-        /*
-            TODO: Add Course to schedule | Check for conflict here
-         */
-        return null;
-    }
+    @Transactional
+    public ScheduleDTO addCourse(Long scheduleId, Long sectionId) {
+        // 1. Fetch the Schedule
+        User currentUser = securityUtil.getCurrentUser().orElseThrow();
+        Schedule schedule = scheduleRepo.findByIdAndUser(scheduleId, currentUser)
+                .orElseThrow(() -> new RuntimeException("Schedule not found"));
 
-    public void removeCourse(Schedule schedule, CourseSection section) {
-        List<CourseSection> courses = schedule.getCourseSections();
-        courses.remove(section);
+        // 2. Fetch the Section
+        CourseSection section = courseSectionRepo.findById(sectionId)
+                .orElseThrow(() -> new RuntimeException("Section not found"));
+
+        // 3. Add the section to the list
+        schedule.getCourseSections().add(section);
+
+        // 4. Save the changes
         scheduleRepo.save(schedule);
+
+        // 5. Return the updated DTO so the frontend sees the change
+        return loadSchedule(schedule.getId());
+    }
+
+    @Transactional
+    public ScheduleDTO removeCourse(Long scheduleId, Long sectionId) {
+        // 1. Fetch the Schedule
+        User currentUser = securityUtil.getCurrentUser().orElseThrow();
+        Schedule schedule = scheduleRepo.findByIdAndUser(scheduleId, currentUser)
+                .orElseThrow(() -> new RuntimeException("Schedule not found"));
+
+        // 2. Fetch the Section
+        CourseSection section = courseSectionRepo.findById(sectionId)
+                .orElseThrow(() -> new RuntimeException("Section not found"));
+
+        // 3. Remove the section from the list
+        schedule.getCourseSections().remove(section);
+
+        // 4. Save the changes
+        scheduleRepo.save(schedule);
+
+        // 5. Return the updated DTO so the frontend sees the change
+        return loadSchedule(schedule.getId());
     }
 
     @Transactional
