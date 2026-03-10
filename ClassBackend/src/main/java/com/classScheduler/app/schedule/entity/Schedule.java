@@ -1,7 +1,5 @@
 package com.classScheduler.app.schedule.entity;
 
-
-import com.classScheduler.app.course.entity.Course;
 import com.classScheduler.app.course.entity.CourseSection;
 import com.classScheduler.app.user.entities.User;
 
@@ -23,7 +21,7 @@ public class Schedule {
     @Column(name = "schedule_id", nullable = false)
     private Long Id;
 
-    @Column(name = "name", length = 20, nullable = false)
+    @Column(name = "name", length = 99, nullable = false)
     private String name;
 
     @ManyToMany
@@ -35,8 +33,8 @@ public class Schedule {
 
     private List<CourseSection> courseSections;
 
-    @OneToOne
-    @JoinColumn(name = "user")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
     private User user;
 
     private boolean hasConflict;
