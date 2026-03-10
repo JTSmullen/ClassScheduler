@@ -7,6 +7,6 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface CourseSectionRepository extends JpaRepository <Course, Long> {
+public interface CourseSectionRepository extends JpaRepository <CourseSection, Long> {
     List<CourseSection> findByNameContainingIgnoreCase(String keyword);
 }
