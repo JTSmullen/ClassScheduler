@@ -8,6 +8,7 @@ import com.classScheduler.app.course.entity.CourseSection;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public class Search {
     private Set<String> keywords;
@@ -17,7 +18,7 @@ public class Search {
     public Search(Set<String> keywords) {
         this.keywords = keywords;
         results = new ArrayList<CourseSection>();
-        filteredResults = new Arraylist<CourseSection>();
+        filteredResults = new ArrayList<CourseSection>();
     }
 
     public ArrayList<CourseSection> getResults(){
