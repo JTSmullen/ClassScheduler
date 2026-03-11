@@ -30,7 +30,6 @@ public class Schedule {
             joinColumns = @JoinColumn(name = "schedule_id"),
             inverseJoinColumns = @JoinColumn(name = "courseSection_id")
     )
-
     private List<CourseSection> courseSections;
 
     @ManyToOne(fetch = FetchType.LAZY)
