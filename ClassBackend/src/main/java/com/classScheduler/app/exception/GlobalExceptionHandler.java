@@ -1,6 +1,6 @@
 package com.classScheduler.app.exception;
 
-import com.classScheduler.app.exception.customs.CourseConflictException;
+import com.classScheduler.app.exception.customs.CourseSectionNotFoundException;
 import com.classScheduler.app.exception.customs.ScheduleNotFoundException;
 
 import com.classScheduler.app.exception.dto.ErrorResponseDto;
@@ -22,12 +22,6 @@ public class GlobalExceptionHandler {
         return new ErrorResponseDto(e.getMessage(), HttpStatus.NOT_FOUND.value());
     }
 
-    @ExceptionHandler(CourseConflictException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponseDto handleCourseConflict(CourseConflictException e) {
-        return new ErrorResponseDto(e.getMessage(), HttpStatus.CONFLICT.value());
-    }
-
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Map<String, String> handleValidationExceptions(MethodArgumentNotValidException e) {
@@ -37,6 +31,12 @@ public class GlobalExceptionHandler {
                 errors.put(error.getField(), error.getDefaultMessage()));
 
         return errors;
+    }
+
+    @ExceptionHandler(CourseSectionNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ErrorResponseDto handleCourseSectionNotFound(CourseSectionNotFoundException e) {
+        return new ErrorResponseDto(e.getMessage(), HttpStatus.NOT_FOUND.value());
     }
 
     @ExceptionHandler(Exception.class)

@@ -4,6 +4,7 @@ import com.classScheduler.app.course.dto.CourseSectionDTO;
 import com.classScheduler.app.course.entity.CourseSection;
 import com.classScheduler.app.course.repository.CourseRepository;
 import com.classScheduler.app.course.repository.CourseSectionRepo;
+import com.classScheduler.app.exception.customs.CourseSectionNotFoundException;
 import com.classScheduler.app.exception.customs.ScheduleNotFoundException;
 import com.classScheduler.app.schedule.dto.NewScheduleRequest;
 import com.classScheduler.app.schedule.dto.ScheduleDTO;
@@ -53,7 +54,7 @@ public class ScheduleService {
 
         // 2. Fetch the Section
         CourseSection section = courseSectionRepo.findById(sectionId)
-                .orElseThrow(() -> new RuntimeException("Section not found"));
+                .orElseThrow(() -> new CourseSectionNotFoundException("Section not found"));
 
         // 3. Add the section to the list
         schedule.getCourseSections().add(section);
@@ -74,7 +75,7 @@ public class ScheduleService {
 
         // 2. Fetch the Section
         CourseSection section = courseSectionRepo.findById(sectionId)
-                .orElseThrow(() -> new RuntimeException("Section not found"));
+                .orElseThrow(() -> new CourseSectionNotFoundException("Section not found"));
 
         // 3. Remove the section from the list
         schedule.getCourseSections().remove(section);
