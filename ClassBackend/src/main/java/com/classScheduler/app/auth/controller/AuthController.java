@@ -35,14 +35,8 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> loginUser(@RequestBody LoginRequest loginRequest) {
 
-        try {
-
-            LoginResponse loginResponse = authService.loginUser(loginRequest);
-            return ResponseEntity.ok(loginResponse);
-
-        } catch (AuthenticationException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Incorrect username or password");
-        }
+        LoginResponse loginResponse = authService.loginUser(loginRequest);
+        return ResponseEntity.ok(loginResponse);
 
     }
 }
