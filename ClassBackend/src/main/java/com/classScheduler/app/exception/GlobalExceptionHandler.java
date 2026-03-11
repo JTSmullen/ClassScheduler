@@ -3,8 +3,10 @@ package com.classScheduler.app.exception;
 import com.classScheduler.app.exception.customs.CourseSectionNotFoundException;
 import com.classScheduler.app.exception.customs.ScheduleNotFoundException;
 
+import com.classScheduler.app.exception.customs.UserAlreadyExistsException;
 import com.classScheduler.app.exception.dto.ErrorResponseDto;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -37,6 +39,11 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ErrorResponseDto handleCourseSectionNotFound(CourseSectionNotFoundException e) {
         return new ErrorResponseDto(e.getMessage(), HttpStatus.NOT_FOUND.value());
+    }
+
+    @ExceptionHandler(UserAlreadyExistsException.class)
+    public ProblemDetail handleUserAlreadyExists(UserAlreadyExistsException e) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, e.getMessage());
     }
 
     @ExceptionHandler(Exception.class)
