@@ -102,6 +102,19 @@ public class ScheduleService {
     }
 
     @Transactional
+    public void deleteSchedule(Long Id) {
+
+        User currentUser = securityUtil.getCurrentUser().orElseThrow();
+
+        Schedule schedule = scheduleRepo.findByIdAndUser(Id, currentUser)
+                .orElseThrow(() -> new RuntimeException("Schedule not found or you do not have permission to access it."));
+
+        schedule.getCourseSections().clear();
+        scheduleRepo.delete(schedule);
+
+    }
+
+    @Transactional
     public ScheduleDTO loadSchedule(Long Id) {
 
         User currentUser = securityUtil.getCurrentUser().orElseThrow();

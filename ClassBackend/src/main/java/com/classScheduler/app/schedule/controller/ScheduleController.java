@@ -1,8 +1,6 @@
 package com.classScheduler.app.schedule.controller;
 
-import com.classScheduler.app.course.entity.CourseSection;
 import com.classScheduler.app.schedule.dto.*;
-import com.classScheduler.app.schedule.entity.Schedule;
 import com.classScheduler.app.schedule.service.ScheduleService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -27,10 +25,10 @@ public class ScheduleController {
 
     }
 
-    @PostMapping("load")
-    public ResponseEntity<ScheduleDTO> loadSchedule(@Valid @RequestBody LoadScheduleRequest loadScheduleRequest) {
+    @GetMapping("load/{id}")
+    public ResponseEntity<ScheduleDTO> loadSchedule(@PathVariable Long id) {
 
-        ScheduleDTO schedule = scheduleService.loadSchedule(loadScheduleRequest.getId());
+        ScheduleDTO schedule = scheduleService.loadSchedule(id);
         return ResponseEntity.ok(schedule);
 
     }
@@ -55,6 +53,15 @@ public class ScheduleController {
         );
 
         return ResponseEntity.ok(updatedSchedule);
+    }
+
+    @DeleteMapping("delete/{id}")
+    public ResponseEntity<?> deleteSchedule(@PathVariable Long id){
+
+        scheduleService.deleteSchedule(id);
+
+        return ResponseEntity.noContent().build();
+
     }
 
 }
