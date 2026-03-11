@@ -4,6 +4,7 @@ import com.classScheduler.app.course.dto.CourseSectionDTO;
 import com.classScheduler.app.course.entity.CourseSection;
 import com.classScheduler.app.course.repository.CourseRepository;
 import com.classScheduler.app.course.repository.CourseSectionRepo;
+import com.classScheduler.app.exception.customs.ScheduleNotFoundException;
 import com.classScheduler.app.schedule.dto.NewScheduleRequest;
 import com.classScheduler.app.schedule.dto.ScheduleDTO;
 import com.classScheduler.app.schedule.entity.Schedule;
@@ -48,7 +49,7 @@ public class ScheduleService {
         // 1. Fetch the Schedule
         User currentUser = securityUtil.getCurrentUser().orElseThrow();
         Schedule schedule = scheduleRepo.findByIdAndUser(scheduleId, currentUser)
-                .orElseThrow(() -> new RuntimeException("Schedule not found"));
+                .orElseThrow(() -> new ScheduleNotFoundException("Schedule not found"));
 
         // 2. Fetch the Section
         CourseSection section = courseSectionRepo.findById(sectionId)
@@ -69,7 +70,7 @@ public class ScheduleService {
         // 1. Fetch the Schedule
         User currentUser = securityUtil.getCurrentUser().orElseThrow();
         Schedule schedule = scheduleRepo.findByIdAndUser(scheduleId, currentUser)
-                .orElseThrow(() -> new RuntimeException("Schedule not found"));
+                .orElseThrow(() -> new ScheduleNotFoundException("Schedule not found"));
 
         // 2. Fetch the Section
         CourseSection section = courseSectionRepo.findById(sectionId)
@@ -107,7 +108,7 @@ public class ScheduleService {
         User currentUser = securityUtil.getCurrentUser().orElseThrow();
 
         Schedule schedule = scheduleRepo.findByIdAndUser(Id, currentUser)
-                .orElseThrow(() -> new RuntimeException("Schedule not found or you do not have permission to access it."));
+                .orElseThrow(() -> new ScheduleNotFoundException("Schedule not found or you do not have permission to access it."));
 
         List<CourseSectionDTO> sections = schedule.getCourseSections()
                 .stream()
