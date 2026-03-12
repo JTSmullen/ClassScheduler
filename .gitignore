@@ -44,3 +44,8 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
+# Frontend
+ClassFrontend/node_modules/
+ClassFrontend/dist/
+ClassFrontend/.vite/
