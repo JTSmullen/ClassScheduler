@@ -1,9 +1,9 @@
 # Class Scheduler Frontend
 
-This is a lightweight React application bootstrapped with [Vite](https://vitejs.dev/).
+This is a simple vanilla JavaScript/HTML frontend served via [Vite](https://vitejs.dev/).
 It provides a minimal UI to log in to the backend, create or load a schedule, and display the
-course calendar. Everything is wired to the backend running at `http://localhost:8080` via a
-proxy defined in `vite.config.ts`.
+course calendar. The code deliberately avoids React and TypeScript so it stays easy to read and
+modify; you can migrate back to React later if desired.
 
 ## Getting Started
 
@@ -32,13 +32,10 @@ authorization and schedule APIs are available at `http://localhost:8080/api/v1`.
 
 The application is intentionally simple:
 
-- `src/App.tsx` contains the main logic and forms for authentication and schedule management.
-- `src/components/Calendar.tsx` renders the schedule; change it to alter the layout or
-  styling (e.g. convert to a grid, plug‑in a calendar library, etc.).
-- API helpers are in `src/services/`; modify or extend them for other endpoints.
-- TypeScript types are declared in `src/types/index.ts`.
+- `src/main.js` contains the full front‑end logic: authentication forms, schedule controls, and calendar rendering.
+- API helpers live in `src/services.js`; edit these if you need to call additional backend endpoints.
 
-Feel free to drop in Tailwind or another styling solution if you want more polish.
+Since the code is plain JavaScript, you can inspect and tweak the DOM directly or replace pieces with a framework when you're ready.
 
 ---
 
