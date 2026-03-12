@@ -27,9 +27,9 @@ public class ClassTime {
     private String day;
 
     @JsonProperty("start_time")
-    private Time startTime;
+    private LocalTime startTime;
 
     @JsonProperty("end_time")
-    private Time endTime;
+    private LocalTime endTime;
 
 }

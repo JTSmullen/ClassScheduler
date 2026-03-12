@@ -72,7 +72,7 @@ public class CourseSection {
 
     private List<String> faculty;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
             name = "section_times",
             joinColumns = @JoinColumn(name = "section_id")
@@ -84,4 +84,3 @@ public class CourseSection {
     @JoinColumn(name = "course_id")
     private Course course;
 }
-
