@@ -14,11 +14,8 @@ import java.util.List;
 @Repository
 public interface CourseSectionRepository extends JpaRepository<CourseSection, Long> {
 
-    @Query("SELECT DISTINCT c FROM CourseSection c " +
+    @Query("SELECT c FROM CourseSection c " +
             "WHERE LOWER(c.name) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-            "OR LOWER(c.subject) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-            "OR STR(c.number) LIKE CONCAT('%', :keyword, '%') " +
-            "OR EXISTS (SELECT f FROM c.faculty f WHERE LOWER(f) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+            "OR LOWER(c.subject) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     List<CourseSection> searchByKeyword(@Param("keyword") String keyword);
-
 }
