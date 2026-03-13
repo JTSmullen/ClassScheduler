@@ -165,6 +165,16 @@ public class ScheduleService {
     }
 
     @Transactional
+    public void deleteSchedule(Long Id) {
+        User currentUser = securityUtil.getCurrentUser().orElseThrow();
+
+        Schedule schedule = scheduleRepo.findByIdAndUser(Id, currentUser)
+                .orElseThrow(() -> new ScheduleNotFoundException("Schedule not found!"));
+
+        scheduleRepo.delete(schedule);
+    }
+
+    @Transactional
     public ScheduleDTO loadSchedule(Long Id) {
 
         User currentUser = securityUtil.getCurrentUser().orElseThrow();
