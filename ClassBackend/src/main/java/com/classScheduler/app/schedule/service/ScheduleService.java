@@ -4,7 +4,7 @@ import com.classScheduler.app.course.dto.CourseSectionDTO;
 import com.classScheduler.app.course.entity.ClassTime;
 import com.classScheduler.app.course.entity.CourseSection;
 import com.classScheduler.app.course.repository.CourseRepository;
-import com.classScheduler.app.course.repository.CourseSectionRepo;
+import com.classScheduler.app.course.repository.CourseSectionRepository;
 import com.classScheduler.app.exception.customs.CourseSectionNotFoundException;
 import com.classScheduler.app.exception.customs.ScheduleNotFoundException;
 import com.classScheduler.app.schedule.dto.NewScheduleRequest;
@@ -34,9 +34,10 @@ public class ScheduleService {
     private final CourseRepository courseRepo;
     private final SecurityUtil securityUtil;
     private final UserRepository userRepository;
-    private final CourseSectionRepo courseSectionRepo;
+    private final CourseSectionRepository courseSectionRepo;
 
-    public ScheduleService(ScheduleRepository scheduleRepo, CourseRepository courseRepo, SecurityUtil securityUtil, UserRepository userRepository, CourseSectionRepo courseSectionRepo) {
+
+    public ScheduleService(ScheduleRepository scheduleRepo, CourseRepository courseRepo, SecurityUtil securityUtil, UserRepository userRepository, CourseSectionRepository courseSectionRepo) {
 
         this.scheduleRepo = scheduleRepo;
         this.courseRepo = courseRepo;
