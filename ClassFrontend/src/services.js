@@ -1,4 +1,4 @@
-const baseUrl = '/api/v1';
+const baseUrl = 'http://localhost:8080/api/v1';
 let authToken = null;
 
 export function setAuthToken(token) {
