@@ -57,4 +57,22 @@ public class ScheduleController {
         return ResponseEntity.ok(updatedSchedule);
     }
 
+    @PostMapping("check")
+    public ResponseEntity<ScheduleDTO> checkConflict(@Valid @RequestBody CheckConflictRequest checkConflictRequest) {
+
+        ScheduleDTO updatedSchedule = scheduleService.checkConflict(
+                checkConflictRequest.getSchedule_id()
+        );
+
+        return ResponseEntity.ok(updatedSchedule);
+    }
+
+    @DeleteMapping("delete/{id}")
+    public ResponseEntity<?> deleteSchedule(@PathVariable Long id) {
+
+        scheduleService.deleteSchedule(id);
+        return ResponseEntity.noContent().build();
+
+    }
+
 }
