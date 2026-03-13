@@ -21,4 +21,5 @@ public class SearchItemDTO {
     private int credits;
     private Long id;
     private List<ClassTime> times;
+    private List<String> faculty;
 }
