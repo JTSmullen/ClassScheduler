@@ -122,7 +122,8 @@ foreach ($idToLoad in $capturedIds) {
     try {
         $loadBody = @{ id = $idToLoad } | ConvertTo-Json
         $loaded = Invoke-RestMethod -Uri "$baseUrl/schedule/load" -Method Post -Headers $headers -Body $loadBody
-        Write-Host "Loaded ID $idToLoad: $($loaded.name)" -ForegroundColor Green
+        # FIXED: Wrapped variable in ${} to avoid ParserError
+        Write-Host "Loaded ID ${idToLoad}: $($loaded.name)" -ForegroundColor Green
     } catch { Write-Host "Failed to load $idToLoad" -ForegroundColor Red }
 }
 
@@ -142,7 +143,7 @@ Write-Host "`n--- 7. DELETING SCHEDULES ---" -ForegroundColor Cyan
 foreach ($idToDelete in $capturedIds) {
     try {
         Invoke-RestMethod -Uri "$baseUrl/schedule/delete/$idToDelete" -Method Delete -Headers $headers
-        Write-Host "Deleted ID $idToDelete" -ForegroundColor Green
+        Write-Host "Deleted ID ${idToDelete}" -ForegroundColor Green
     } catch { }
 }
 
@@ -162,10 +163,21 @@ try {
 # ==========================================
 Write-Host "`n--- 9. TESTING SEARCH (RAW STRING BODY) ---" -ForegroundColor Cyan
 try {
-    $searchQuery = "Introduction" # Sending as raw string body
-    $searchResults = Invoke-RestMethod -Uri "$baseUrl/search" -Method Post -Headers $headers -Body $searchQuery
-    Write-Host "Found $($searchResults.Count) results for '$searchQuery'." -ForegroundColor Green
-} catch { Write-Host "Search failed" -ForegroundColor Red }
+    $searchQuery = "Introduction"
+    Write-Host "Searching keywords: '$searchQuery'..." -NoNewline
+
+    # We use -ContentType "text/plain" because the controller is expecting a raw String, not JSON
+    $searchResults = Invoke-RestMethod -Uri "$baseUrl/search" -Method Post -Headers $headers -ContentType "text/plain" -Body $searchQuery
+
+    Write-Host " DONE." -ForegroundColor Green
+    Write-Host " Found $($searchResults.Count) results." -ForegroundColor DarkCyan
+} catch {
+    Write-Host " FAILED." -ForegroundColor Red
+    if ($_.Exception.Response) {
+        $sr = [System.IO.StreamReader]::new($_.Exception.Response.GetResponseStream())
+        Write-Host " Error: $($sr.ReadToEnd())" -ForegroundColor Yellow
+    }
+}
 
 # ==========================================
 # 10. FILTER (POST with @RequestBody DTO)
@@ -179,18 +191,22 @@ try {
         courseNumbers = @()
     } | ConvertTo-Json
 
+    Write-Host "Applying Filter DTO..." -NoNewline
     $filterResults = Invoke-RestMethod -Uri "$baseUrl/search/filter" -Method Post -Headers $headers -Body $filterBody
-    Write-Host "Filtered results: $($filterResults.Count) matches found." -ForegroundColor Green
+
+    Write-Host " DONE." -ForegroundColor Green
+    Write-Host " Filtered results: $($filterResults.Count) matches found." -ForegroundColor DarkCyan
+
     if ($filterResults.Count -gt 0) {
         $filterResults | Select-Object -First 3 | ForEach-Object {
             Write-Host "   -> $($_.subject) $($_.number): $($_.name)" -ForegroundColor Yellow
         }
     }
 } catch {
-    Write-Host "Filter failed." -ForegroundColor Red
+    Write-Host " FAILED." -ForegroundColor Red
     if ($_.Exception.Response) {
         $sr = [System.IO.StreamReader]::new($_.Exception.Response.GetResponseStream())
-        Write-Host "Error: $($sr.ReadToEnd())" -ForegroundColor Yellow
+        Write-Host " Error: $($sr.ReadToEnd())" -ForegroundColor Yellow
     }
 }
 

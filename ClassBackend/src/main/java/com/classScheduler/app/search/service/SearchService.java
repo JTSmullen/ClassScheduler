@@ -40,13 +40,13 @@ public class SearchService {
     public List<SearchItemDTO> search(Set<String> keywords) {
         // get current user
         User user = securityUtil.getCurrentUser().orElseThrow();
-        // deletes old search entity from database since orphan removal enabled in User
-        user.setSearch(null);
 
         // make new search entity
         Search search = new Search();
 
+
         // associate user with search and search with user
+        // automatically deletes old search entity from database since orphan removal enabled in User
         user.setSearch(search);
         search.setUser(user);
 
@@ -132,6 +132,11 @@ public class SearchService {
                 .map(CourseSection::getNumber)
                 .collect(Collectors.toSet());
 
-        return new FilterOptionsDTO(departments, credits, faculty, courseNumbers);
+        //TODO: finish this and update all else to work with time.
+        Set<String> times = search.getResults().stream()
+                .flatMap(c -> c.getFaculty().stream())
+                .collect(Collectors.toSet());
+
+        return new FilterOptionsDTO(departments, credits, faculty, courseNumbers, times);
     }
 }
