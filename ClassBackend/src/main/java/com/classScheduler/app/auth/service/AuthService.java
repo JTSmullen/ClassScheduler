@@ -3,6 +3,7 @@ package com.classScheduler.app.auth.service;
 import com.classScheduler.app.auth.dto.LoginRequest;
 import com.classScheduler.app.auth.dto.LoginResponse;
 import com.classScheduler.app.auth.dto.RegisterRequest;
+import com.classScheduler.app.exception.customs.UserAlreadyExistsException;
 import com.classScheduler.app.user.entities.User;
 import com.classScheduler.app.user.repository.UserRepository;
 import com.classScheduler.app.security.util.JwtUtil;
@@ -34,7 +35,15 @@ public class AuthService {
     }
 
     @Transactional
-    public User registerUser(RegisterRequest registerRequest) {
+    public LoginResponse registerUser(RegisterRequest registerRequest) {
+
+        if (userRepository.existsByName(registerRequest.getUsername())) {
+            throw new UserAlreadyExistsException("Account with username already exists!");
+        }
+
+        if (userRepository.existsByEmail(registerRequest.getEmail())) {
+            throw new UserAlreadyExistsException("Account with that email already exists!");
+        }
 
         User user = new User();
         user.setName(registerRequest.getUsername());
@@ -45,7 +54,7 @@ public class AuthService {
 
         userRepository.save(user);
 
-        return user;
+        return loginUser(new LoginRequest(registerRequest.getUsername(), registerRequest.getPassword()));
 
     }
 

@@ -4,11 +4,15 @@ import com.classScheduler.app.course.dto.CourseSectionDTO;
 import com.classScheduler.app.course.entity.ClassTime;
 import com.classScheduler.app.course.entity.CourseSection;
 import com.classScheduler.app.course.repository.CourseRepository;
-import com.classScheduler.app.course.repository.CourseSectionRepository;
+import com.classScheduler.app.course.repository.CourseSectionRepo;
+import com.classScheduler.app.exception.customs.CourseSectionNotFoundException;
+import com.classScheduler.app.exception.customs.ScheduleNotFoundException;
 import com.classScheduler.app.schedule.dto.NewScheduleRequest;
 import com.classScheduler.app.schedule.dto.ScheduleDTO;
 import com.classScheduler.app.schedule.entity.Schedule;
 import com.classScheduler.app.schedule.repository.ScheduleRepository;
+import com.classScheduler.app.security.service.CustomUserDetailsService;
+import com.classScheduler.app.security.util.JwtUtil;
 import com.classScheduler.app.security.util.SecurityUtil;
 import com.classScheduler.app.user.dto.UserDTO;
 
@@ -30,9 +34,9 @@ public class ScheduleService {
     private final CourseRepository courseRepo;
     private final SecurityUtil securityUtil;
     private final UserRepository userRepository;
-    private final CourseSectionRepository courseSectionRepo;
+    private final CourseSectionRepo courseSectionRepo;
 
-    public ScheduleService(ScheduleRepository scheduleRepo, CourseRepository courseRepo, SecurityUtil securityUtil, UserRepository userRepository, CourseSectionRepository courseSectionRepo) {
+    public ScheduleService(ScheduleRepository scheduleRepo, CourseRepository courseRepo, SecurityUtil securityUtil, UserRepository userRepository, CourseSectionRepo courseSectionRepo) {
 
         this.scheduleRepo = scheduleRepo;
         this.courseRepo = courseRepo;
@@ -48,11 +52,11 @@ public class ScheduleService {
         // Fetch the Schedule
         User currentUser = securityUtil.getCurrentUser().orElseThrow();
         Schedule schedule = scheduleRepo.findByIdAndUser(scheduleId, currentUser)
-                .orElseThrow(() -> new RuntimeException("Schedule not found"));
+                .orElseThrow(() -> new ScheduleNotFoundException("Schedule not found"));
 
         // Fetch the Section
         CourseSection section = courseSectionRepo.findById(sectionId)
-                .orElseThrow(() -> new RuntimeException("Section not found"));
+                .orElseThrow(() -> new CourseSectionNotFoundException("Section not found"));
 
         // Add the section to the list
         schedule.getCourseSections().add(section);
@@ -75,11 +79,11 @@ public class ScheduleService {
         // Fetch the Schedule
         User currentUser = securityUtil.getCurrentUser().orElseThrow();
         Schedule schedule = scheduleRepo.findByIdAndUser(scheduleId, currentUser)
-                .orElseThrow(() -> new RuntimeException("Schedule not found"));
+                .orElseThrow(() -> new ScheduleNotFoundException("Schedule not found"));
 
         // Fetch the Section
         CourseSection section = courseSectionRepo.findById(sectionId)
-                .orElseThrow(() -> new RuntimeException("Section not found"));
+                .orElseThrow(() -> new CourseSectionNotFoundException("Section not found"));
 
         // Remove the section from the list
         schedule.getCourseSections().remove(section);
@@ -165,7 +169,7 @@ public class ScheduleService {
         User currentUser = securityUtil.getCurrentUser().orElseThrow();
 
         Schedule schedule = scheduleRepo.findByIdAndUser(Id, currentUser)
-                .orElseThrow(() -> new RuntimeException("Schedule not found or you do not have permission to access it."));
+                .orElseThrow(() -> new ScheduleNotFoundException("Schedule not found or you do not have permission to access it."));
 
         List<CourseSectionDTO> sections = schedule.getCourseSections()
                 .stream()
