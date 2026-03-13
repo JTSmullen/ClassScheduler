@@ -3,6 +3,7 @@ package com.classScheduler.app.search.controller;
 import com.classScheduler.app.search.dto.SearchItemDTO;
 import com.classScheduler.app.search.service.SearchService;
 import com.classScheduler.app.search.dto.SearchFilterDTO;
+import com.classScheduler.app.search.dto.FilterOptionsDTO;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,7 +20,7 @@ public class SearchController {
         this.searchService = searchService;
     }
 
-    @GetMapping
+    @PostMapping
     public ResponseEntity<List<SearchItemDTO>> search(@RequestParam String query) {
 
         Set<String> keywords = new HashSet<>(Arrays.asList(query.split(" ")));
@@ -28,9 +29,14 @@ public class SearchController {
     }
 
 
-    @GetMapping("/filter")
+    @PostMapping("/filter")
     public ResponseEntity<List<SearchItemDTO>> filter(SearchFilterDTO filter) {
 
         return ResponseEntity.ok(searchService.filterResults(filter));
+    }
+
+    @GetMapping("/filter/options")
+    public ResponseEntity<FilterOptionsDTO> filterOptions() {
+        return ResponseEntity.ok(searchService.getFilterOptions());
     }
 }

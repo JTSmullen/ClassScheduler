@@ -22,6 +22,7 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class SearchService {
@@ -82,6 +83,10 @@ public class SearchService {
         User user = securityUtil.getCurrentUser().orElseThrow();
         Search search = user.getSearch();
 
+        if (search == null) {
+            throw new IllegalStateException("User has no active search");
+        }
+
         // filter user's search results by filter
         List<CourseSection> filtered = search.getResults().stream()
                 .filter(c -> filter.getDepartment() == null || filter.getDepartment().isEmpty()
@@ -123,6 +128,10 @@ public class SearchService {
                 .flatMap(c -> c.getFaculty().stream())
                 .collect(Collectors.toSet());
 
-        return new FilterOptionsDTO(departments, credits, faculty);
+        Set<Integer> courseNumbers = search.getResults().stream()
+                .map(CourseSection::getNumber)
+                .collect(Collectors.toSet());
+
+        return new FilterOptionsDTO(departments, credits, faculty, courseNumbers);
     }
 }
