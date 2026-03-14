@@ -122,7 +122,6 @@ foreach ($idToLoad in $capturedIds) {
     try {
         $loadBody = @{ id = $idToLoad } | ConvertTo-Json
         $loaded = Invoke-RestMethod -Uri "$baseUrl/schedule/load" -Method Post -Headers $headers -Body $loadBody
-        # FIXED: Wrapped variable in ${} to avoid ParserError
         Write-Host "Loaded ID ${idToLoad}: $($loaded.name)" -ForegroundColor Green
     } catch { Write-Host "Failed to load $idToLoad" -ForegroundColor Red }
 }
@@ -147,26 +146,15 @@ foreach ($idToDelete in $capturedIds) {
     } catch { }
 }
 
-# ==========================================
-# 8. FETCH FILTER OPTIONS
-# ==========================================
-Write-Host "`n--- 8. FETCHING FILTER OPTIONS ---" -ForegroundColor Cyan
-try {
-    $options = Invoke-RestMethod -Uri "$baseUrl/search/filter/options" -Method Get -Headers $headers
-    $sampleDept = if ($options.departments.Count -gt 0) { $options.departments[0] } else { "CS" }
-    $sampleCredit = if ($options.credits.Count -gt 0) { $options.credits[0] } else { 3 }
-    Write-Host "Options retrieved. Sample Dept: $sampleDept" -ForegroundColor Green
-} catch { Write-Host "Failed to fetch options" -ForegroundColor Red }
 
 # ==========================================
-# 9. SEARCH (POST with @RequestBody String)
+# 8. SEARCH (POST with @RequestBody String)
 # ==========================================
-Write-Host "`n--- 9. TESTING SEARCH (RAW STRING BODY) ---" -ForegroundColor Cyan
+Write-Host "`n--- 8. TESTING SEARCH (RAW STRING BODY) ---" -ForegroundColor Cyan
 try {
     $searchQuery = "Introduction"
     Write-Host "Searching keywords: '$searchQuery'..." -NoNewline
 
-    # We use -ContentType "text/plain" because the controller is expecting a raw String, not JSON
     $searchResults = Invoke-RestMethod -Uri "$baseUrl/search" -Method Post -Headers $headers -ContentType "text/plain" -Body $searchQuery
 
     Write-Host " DONE." -ForegroundColor Green
@@ -174,9 +162,27 @@ try {
 } catch {
     Write-Host " FAILED." -ForegroundColor Red
     if ($_.Exception.Response) {
-        $sr = [System.IO.StreamReader]::new($_.Exception.Response.GetResponseStream())
+        $sr =[System.IO.StreamReader]::new($_.Exception.Response.GetResponseStream())
         Write-Host " Error: $($sr.ReadToEnd())" -ForegroundColor Yellow
     }
+}
+
+# ==========================================
+# 9. FETCH FILTER OPTIONS
+# ==========================================
+Write-Host "`n--- 9. FETCHING FILTER OPTIONS ---" -ForegroundColor Cyan
+$sampleSubject = "CS"
+$sampleCredit = 3
+try {
+    $options = Invoke-RestMethod -Uri "$baseUrl/search/filter/options" -Method Get -Headers $headers
+
+    # Grab the first valid subject and credit from the real results to use in Step 10
+    if ($options.subjects.Count -gt 0) { $sampleSubject = $options.subjects[0] }
+    if ($options.credits.Count -gt 0)  { $sampleCredit = $options.credits[0] }
+
+    Write-Host "Options retrieved. Sample Subject: $sampleSubject" -ForegroundColor Green
+} catch {
+    Write-Host "Failed to fetch options (Assuming 0 results from search)" -ForegroundColor Red
 }
 
 # ==========================================
@@ -184,12 +190,14 @@ try {
 # ==========================================
 Write-Host "`n--- 10. TESTING FILTER (JSON DTO) ---" -ForegroundColor Cyan
 try {
+    # Dynamically apply filters using arrays
     $filterBody = @{
-        departments   = @($sampleDept)
-        credits       = @([int]$sampleCredit)
-        professors    = @()
-        courseNumbers = @()
-    } | ConvertTo-Json
+        subjects = @($sampleSubject)
+        credits  = @([int]$sampleCredit)
+        faculty  = @()
+        numbers  = @()
+        times    = @()
+    } | ConvertTo-Json -Depth 5
 
     Write-Host "Applying Filter DTO..." -NoNewline
     $filterResults = Invoke-RestMethod -Uri "$baseUrl/search/filter" -Method Post -Headers $headers -Body $filterBody
@@ -205,7 +213,7 @@ try {
 } catch {
     Write-Host " FAILED." -ForegroundColor Red
     if ($_.Exception.Response) {
-        $sr = [System.IO.StreamReader]::new($_.Exception.Response.GetResponseStream())
+        $sr =[System.IO.StreamReader]::new($_.Exception.Response.GetResponseStream())
         Write-Host " Error: $($sr.ReadToEnd())" -ForegroundColor Yellow
     }
 }

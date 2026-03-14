@@ -24,7 +24,7 @@ public class SearchController {
     @PostMapping
     public ResponseEntity<List<SearchItemDTO>> search(@Valid @RequestBody String query) {
 
-        Set<String> keywords = new HashSet<>(Arrays.asList(query.split(" ")));
+        Set<String> keywords = new HashSet<>(Arrays.asList(query.trim().split("\\s+")));
 
         return ResponseEntity.ok(searchService.search(keywords));
     }

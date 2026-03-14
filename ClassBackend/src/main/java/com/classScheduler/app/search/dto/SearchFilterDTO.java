@@ -10,9 +10,9 @@ import java.util.Set;
 @Getter
 @Setter
 public class SearchFilterDTO {
-    private Set<String> department;
+    private Set<String> subjects;
+    private Set<Integer> numbers;
     private Set<Integer> credits;
-    private Set<String> professor;
-    private Set<Integer> courseNumber;
+    private Set<String> faculty;
     private Set<List<ClassTime>> times;
 }

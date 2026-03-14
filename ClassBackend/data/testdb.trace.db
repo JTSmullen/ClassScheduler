@@ -1,0 +1,9 @@
+2026-03-14 14:12:56.881909-04:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLDataException: Value too long for column "NAME CHARACTER VARYING(20)": "'filter_tester_2040558554' (24)"; SQL statement:
+insert into users (email,first_name,last_name,name,password_hash,user_id) values (?,?,?,?,?,default) [22001-224]
+2026-03-14 14:18:47.278637-04:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLDataException: Value too long for column "NAME CHARACTER VARYING(20)": "'filter_tester_284006422' (23)"; SQL statement:
+insert into users (email,first_name,last_name,name,password_hash,user_id) values (?,?,?,?,?,default) [22001-224]
+2026-03-14 14:20:02.804882-04:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLDataException: Value too long for column "NAME CHARACTER VARYING(20)": "'filter_tester_2126188573' (24)"; SQL statement:
+insert into users (email,first_name,last_name,name,password_hash,user_id) values (?,?,?,?,?,default) [22001-224]
