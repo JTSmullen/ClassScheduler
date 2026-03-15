@@ -1,6 +1,5 @@
 package com.classScheduler.app.course.entity;
 
-import com.classScheduler.app.filter.enums.Professor;
 import com.classScheduler.app.schedule.entity.Schedule;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;

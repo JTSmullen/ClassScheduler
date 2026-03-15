@@ -2,6 +2,7 @@ package com.classScheduler.app.user.entities;
 
 import com.classScheduler.app.Advisor.entities.Advisor;
 import com.classScheduler.app.schedule.entity.Schedule;
+import com.classScheduler.app.search.entity.Search;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -19,6 +20,9 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "user_id", nullable = false)
     private Long id;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Search search;
 
     @Column(name = "name", length = 20, nullable = false)
     private String name;
