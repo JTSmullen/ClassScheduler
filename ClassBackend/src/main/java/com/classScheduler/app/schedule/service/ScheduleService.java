@@ -185,6 +185,7 @@ public class ScheduleService {
         List<CourseSectionDTO> sections = schedule.getCourseSections()
                 .stream()
                 .map(section -> new CourseSectionDTO(
+                        section.getId(),
                         section.getSubject(),
                         section.getNumber(),
                         section.getName(),
