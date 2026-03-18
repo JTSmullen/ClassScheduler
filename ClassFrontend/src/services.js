@@ -1,17 +1,13 @@
 // Keep the backend base URL in one place so changing environments stays simple.
-// If your backend port changes later, this is one of the main lines you would update.
 const baseUrl = 'http://localhost:8080/api/v1';
 
 // Store the JWT under a stable key so refreshes keep the user signed in.
-// localStorage is the browser's built-in small key/value store.
 const tokenStorageKey = 'classScheduler.jwt';
 
 // Mirror the active token in module state so every request can reuse it.
-// "module state" here just means a variable that lives in this file.
 let authToken = localStorage.getItem(tokenStorageKey) || '';
 
 // Save a token for future API requests and page reloads.
-// export means other files can import and call this function.
 export function setAuthToken(token) {
   authToken = token || '';
 
@@ -24,20 +20,16 @@ export function setAuthToken(token) {
 }
 
 // Read the last stored token when the app starts.
-// This is basically a getter helper.
 export function getStoredAuthToken() {
   return localStorage.getItem(tokenStorageKey) || '';
 }
 
 // Clear the token during logout.
-// Instead of duplicating logic, we reuse setAuthToken('').
 export function clearAuthToken() {
   setAuthToken('');
 }
 
 // Convert whatever the backend returned into the cleanest error message available.
-// JSON.parse tries to convert text into a JavaScript object.
-// This is similar to loading JSON into a Python dict.
 function parseErrorMessage(responseText, fallbackMessage) {
   try {
     const parsed = JSON.parse(responseText);
@@ -53,8 +45,6 @@ function parseErrorMessage(responseText, fallbackMessage) {
 }
 
 // Centralize fetch logic so all endpoints behave the same way.
-// fetch is the browser's built-in HTTP client.
-// This helper wraps fetch so every API call gets the same headers, error handling, and parsing.
 async function request(path, { method = 'GET', body, contentType = null } = {}) {
   const headers = {};
 
@@ -90,7 +80,6 @@ async function request(path, { method = 'GET', body, contentType = null } = {}) 
 }
 
 // Send a JSON POST request to the backend.
-// JSON.stringify converts a JavaScript object into a JSON string for the request body.
 function postJson(path, data) {
   return request(path, {
     method: 'POST',
@@ -100,7 +89,6 @@ function postJson(path, data) {
 }
 
 // Send the plain-text body required by the backend search endpoint.
-// The search controller on the backend accepts raw text instead of JSON.
 function postText(path, text) {
   return request(path, {
     method: 'POST',
@@ -110,12 +98,12 @@ function postText(path, text) {
 }
 
 // Send a GET request for endpoints that do not need a body.
+// NEW: Brought this helper back to support fetching the professor dropdown options.
 function getJson(path) {
   return request(path, { method: 'GET' });
 }
 
 // Authenticate an existing user and receive a JWT token.
-// JWT stands for JSON Web Token, which is the login credential the backend returns.
 export function login(data) {
   return postJson('/auth/login', data);
 }
@@ -151,12 +139,12 @@ export function searchCourses(query) {
 }
 
 // Apply the backend's current filter endpoint to the user's active search.
-// This only works after a search has already populated the user's active search server-side.
 export function filterSearchResults(filterPayload) {
   return postJson('/search/filter', filterPayload);
 }
 
-// Load the backend-provided filter choices for the user's active search.
+// NEW: Load the backend-provided filter choices for the user's active search.
+// We use this strictly to populate the Professor dropdown based on the available results.
 export function getFilterOptions() {
   return getJson('/search/filter/options');
 }

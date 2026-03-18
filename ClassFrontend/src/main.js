@@ -6,7 +6,7 @@ import {
   clearAuthToken,
   createSchedule,
   filterSearchResults,
-  getFilterOptions,
+  getFilterOptions, // NEW: We brought this back to fetch dropdown options!
   getStoredAuthToken,
   loadSchedule,
   login,
@@ -30,18 +30,13 @@ const DAY_LABELS = {
   F: 'Friday',
 };
 
-// The calendar will show 8 AM through 8 PM, which covers the seed data well.
+// The calendar boundaries. We still need these to draw the time slots correctly.
 const CALENDAR_START_MINUTES = 8 * 60;
-
-// The calendar ends at 8 PM so evening classes still fit on the screen.
 const CALENDAR_END_MINUTES = 20 * 60;
 
-// The UI uses a few broad example queries until the backend returns a usable course.
-const EXAMPLE_QUERIES = ['MATH', 'ACCT', 'BIOL', 'CHEM', 'ENGL'];
-
-// This single state object keeps the vanilla-JS app predictable and easy to trace.
-// In React this would usually be component state.
-// In plain JavaScript we just keep one shared object and re-render the screen when it changes.
+// App state mapped strictly to the backend's search and filter capabilities.
+// Note: We removed the "exampleCourse" state and added "availableFaculty"
+// to hold the professor dropdown options provided by the backend.
 const state = {
   token: getStoredAuthToken(),
   isRegistering: false,
@@ -49,27 +44,19 @@ const state = {
   currentSchedule: null,
   rawSearchResults: [],
   visibleSearchResults: [],
-  availableFilterOptions: {
-    subjects: [],
-    credits: [],
-    faculty: [],
-  },
-  exampleCourse: null,
-  exampleStatus: 'idle',
+  availableFaculty: [], // NEW: Stores the professor list from the backend FilterOptionsDTO
   courseIdsByKey: new Map(),
   pendingScheduleName: '',
   pendingScheduleId: '',
   searchDraft: {
     keyword: '',
-    department: '',
-    courseCode: '',
-    professor: '',
-    selectedSubject: '',
-    selectedCredits: '',
-    selectedFaculty: '',
-    startAfter: '',
-    endBefore: '',
-    selectedDays: {
+    filterSubject: '',
+    filterNumber: '',
+    filterFaculty: '',
+    filterCredits: '',
+    filterStartTime: '',
+    filterEndTime: '',
+    filterDays: {
       M: false,
       T: false,
       W: false,
@@ -85,18 +72,6 @@ if (state.token) {
   setAuthToken(state.token);
 }
 
-// TODO (MVP work for you, about 4.0 hours total):
-// 1. 1.25h: Add course-section IDs to ScheduleDTO/CourseSectionDTO on the backend so remove buttons work after a saved schedule is reloaded.
-// 2. 1.25h: Expand the backend search endpoint so professor-only and department-only searches work without needing a keyword seed.
-// 3. 0.75h: Enforce conflict rejection on the backend's add-course endpoint so conflicting classes cannot be added from any client.
-// 4. 0.75h: Manually test the full MVP flow and tighten edge-case messages based on what you observe in the browser.
-
-// TODO (post-MVP, do not count toward the 4.0 hours above):
-// 1. Migrate this UI to React components once the API contract is stable.
-// 2. Add richer server-side filters for day/time ranges instead of the current client-side fallback.
-// 3. Add multi-schedule switching and comparison once the team agrees on UX.
-// 4. Add drag-to-resize or drag-to-reorder interactions in the calendar.
-
 // Return a safe array so the UI never crashes on null or undefined collections.
 // Backend data is not always guaranteed to be present, so this works like a defensive helper.
 function safeArray(value) {
@@ -108,7 +83,6 @@ function safeArray(value) {
 // document.getElementById(...) is how we grab one node from that tree.
 function showError(message) {
   const errorNode = document.getElementById('error');
-
   if (errorNode) {
     errorNode.textContent = message || '';
   }
@@ -119,7 +93,6 @@ function showError(message) {
 // This is our simple "start fresh and redraw everything" approach.
 function clearApp() {
   const app = document.getElementById('app');
-
   if (app) {
     app.innerHTML = '';
   }
@@ -142,11 +115,9 @@ function getDirectCourseId(course) {
 // This is a fallback strategy: first try the direct value, then try the remembered map.
 function resolveCourseId(course) {
   const directId = getDirectCourseId(course);
-
   if (directId !== null && directId !== undefined) {
     return directId;
   }
-
   return state.courseIdsByKey.get(getCourseKey(course)) ?? null;
 }
 
@@ -155,7 +126,6 @@ function resolveCourseId(course) {
 function rememberCourseIds(courses) {
   safeArray(courses).forEach((course) => {
     const courseId = getDirectCourseId(course);
-
     if (courseId !== null && courseId !== undefined) {
       state.courseIdsByKey.set(getCourseKey(course), courseId);
     }
@@ -166,18 +136,11 @@ function rememberCourseIds(courses) {
 // Converting times to one number makes comparisons much simpler.
 // For example, 13:45 becomes 825 minutes.
 function parseTimeToMinutes(value) {
-  if (!value) {
-    return null;
-  }
-
+  if (!value) return null;
   const parts = String(value).split(':');
   const hours = Number(parts[0]);
   const minutes = Number(parts[1] || '0');
-
-  if (Number.isNaN(hours) || Number.isNaN(minutes)) {
-    return null;
-  }
-
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
   return (hours * 60) + minutes;
 }
 
@@ -189,13 +152,10 @@ function formatMinutesLabel(totalMinutes) {
   const suffix = hours24 >= 12 ? 'PM' : 'AM';
   const hours12 = ((hours24 + 11) % 12) + 1;
   const paddedMinutes = String(minutes).padStart(2, '0');
-
   return `${hours12}:${paddedMinutes} ${suffix}`;
 }
 
-// Extract one course's meeting times in a consistent structure for later comparisons.
-// map(...) transforms each item in the array into a new shape.
-// filter(...) removes bad or incomplete entries.
+// Extract one course's meeting times in a consistent structure.
 function getCourseMeetings(course) {
   return safeArray(course?.times)
     .map((time) => ({
@@ -207,45 +167,31 @@ function getCourseMeetings(course) {
 }
 
 // Render a compact time summary like M 9:00 AM-9:50 AM, W 9:00 AM-9:50 AM.
-// join(', ') is similar to Python ', '.join(...) when building a display string.
 function formatMeetingSummary(course) {
   const meetings = getCourseMeetings(course);
-
-  if (meetings.length === 0) {
-    return 'No meeting time listed';
-  }
-
+  if (meetings.length === 0) return 'No meeting time listed';
   return meetings
     .map((meeting) => `${meeting.day} ${formatMinutesLabel(meeting.start)}-${formatMinutesLabel(meeting.end)}`)
     .join(', ');
 }
 
 // Check whether two single meeting blocks overlap on the same day.
-// The logic is: two intervals overlap if one starts before the other ends
-// and ends after the other starts.
+// This logic is ONLY used to show visual conflict warnings in the UI calendar.
 function meetingsOverlap(leftMeeting, rightMeeting) {
-  if (leftMeeting.day !== rightMeeting.day) {
-    return false;
-  }
-
+  if (leftMeeting.day !== rightMeeting.day) return false;
   return leftMeeting.start < rightMeeting.end && leftMeeting.end > rightMeeting.start;
 }
 
 // Check whether two courses conflict anywhere in the week.
-// some(...) means "does at least one item match this condition?"
 function coursesConflict(leftCourse, rightCourse) {
   const leftMeetings = getCourseMeetings(leftCourse);
   const rightMeetings = getCourseMeetings(rightCourse);
-
   return leftMeetings.some((leftMeeting) => rightMeetings.some((rightMeeting) => meetingsOverlap(leftMeeting, rightMeeting)));
 }
 
-// Compute conflict state on the frontend so stale backend flags do not confuse the user.
-// This double loop compares every course against every later course.
-// That is a common pattern when you need to compare all pairs.
+// Used to check if the user's current schedule contains overlapping classes.
 function scheduleHasConflict(schedule) {
   const courseSections = safeArray(schedule?.courseSections);
-
   for (let leftIndex = 0; leftIndex < courseSections.length; leftIndex += 1) {
     for (let rightIndex = leftIndex + 1; rightIndex < courseSections.length; rightIndex += 1) {
       if (coursesConflict(courseSections[leftIndex], courseSections[rightIndex])) {
@@ -253,159 +199,62 @@ function scheduleHasConflict(schedule) {
       }
     }
   }
-
   return false;
 }
 
-// Prevent adding a course that would overlap something already on the schedule.
-// This gives the user fast feedback even before the backend enforces the rule itself.
+// Prevents the user from adding a class that breaks their schedule visually
 function wouldConflictWithSchedule(schedule, candidateCourse) {
   return safeArray(schedule?.courseSections).some((existingCourse) => coursesConflict(existingCourse, candidateCourse));
 }
 
-// Normalize backend filter options so selects can render safely even if a call fails.
-// sort() is used so dropdown values appear in a predictable order.
-function normalizeFilterOptions(options) {
-  return {
-    subjects: safeArray(options?.subjects).slice().sort(),
-    credits: safeArray(options?.credits).slice().sort((left, right) => left - right),
-    faculty: safeArray(options?.faculty).slice().sort(),
-  };
-}
-
-// Pull the first obvious base query from the search form.
-// The backend search endpoint currently expects one plain-text query string.
-function buildBaseQuery() {
-  const { keyword, department, courseCode } = state.searchDraft;
-
-  return keyword.trim() || department.trim() || courseCode.trim();
-}
-
-// Convert the current filter state into the payload the backend already understands.
-// This is basically building a JSON object to send in the request body.
+// Convert the free-form frontend filter state directly into the SearchFilterDTO structure.
+// This maps directly to the backend object layout so the Java controller can read it.
 function buildServerFilterPayload() {
   const payload = {};
 
-  if (state.searchDraft.selectedSubject) {
-    payload.subjects = [state.searchDraft.selectedSubject];
+  if (state.searchDraft.filterSubject.trim()) {
+    payload.subjects = [state.searchDraft.filterSubject.trim()];
   }
 
-  if (state.searchDraft.selectedCredits) {
-    payload.credits = [Number(state.searchDraft.selectedCredits)];
+  if (state.searchDraft.filterNumber.trim()) {
+    const num = parseInt(state.searchDraft.filterNumber.trim(), 10);
+    if (!isNaN(num)) payload.numbers = [num];
   }
 
-  if (state.searchDraft.selectedFaculty) {
-    payload.faculty = [state.searchDraft.selectedFaculty];
+  // Uses the newly implemented dropdown state
+  if (state.searchDraft.filterFaculty.trim()) {
+    payload.faculty = [state.searchDraft.filterFaculty.trim()];
+  }
+
+  if (state.searchDraft.filterCredits.trim()) {
+    const cred = parseInt(state.searchDraft.filterCredits.trim(), 10);
+    if (!isNaN(cred)) payload.credits = [cred];
+  }
+
+  // Build the Set<List<ClassTime>> payload expected by the backend
+  const selectedDays = DAY_ORDER.filter((day) => state.searchDraft.filterDays[day]);
+
+  if (selectedDays.length > 0) {
+    // HTML time inputs return "HH:mm". Java LocalTime expects "HH:mm:ss".
+    // Default to start/end of day if user didn't pick specific times.
+    const startTime = state.searchDraft.filterStartTime ? `${state.searchDraft.filterStartTime}:00` : '00:00:00';
+    const endTime = state.searchDraft.filterEndTime ? `${state.searchDraft.filterEndTime}:00` : '23:59:59';
+
+    // The backend allMatch requires the course to meet on ALL these days within this range
+    const timeList = selectedDays.map((day) => ({
+      day: day,
+      start_time: startTime,
+      end_time: endTime
+    }));
+
+    // Assign to a nested array representing Set<List<ClassTime>>
+    payload.times = [timeList];
   }
 
   return payload;
 }
 
-// Apply the filters the backend does not currently support well enough on its own.
-// This is a client-side filter pass: we already have a list of courses in memory,
-// and now we narrow that list further in the browser.
-function applyClientFilters(courses) {
-  const codeFilter = state.searchDraft.courseCode.trim().toLowerCase().replace(/\s+/g, ' ');
-  const professorFilter = state.searchDraft.professor.trim().toLowerCase();
-  const afterMinutes = parseTimeToMinutes(state.searchDraft.startAfter);
-  const beforeMinutes = parseTimeToMinutes(state.searchDraft.endBefore);
-  const selectedDays = DAY_ORDER.filter((day) => state.searchDraft.selectedDays[day]);
-
-  return safeArray(courses).filter((course) => {
-    const meetings = getCourseMeetings(course);
-    const faculty = safeArray(course.faculty).join(' ').toLowerCase();
-    const normalizedCode = `${String(course.subject || '').toLowerCase()} ${String(course.number || '').toLowerCase()}`.trim();
-
-    if (codeFilter && normalizedCode !== codeFilter) {
-      return false;
-    }
-
-    if (professorFilter && !faculty.includes(professorFilter)) {
-      return false;
-    }
-
-    if (selectedDays.length > 0) {
-      const courseDays = new Set(meetings.map((meeting) => meeting.day));
-      const hasAllRequestedDays = selectedDays.every((day) => courseDays.has(day));
-
-      if (!hasAllRequestedDays) {
-        return false;
-      }
-    }
-
-    if (afterMinutes !== null) {
-      const startsLateEnough = meetings.length > 0 && meetings.every((meeting) => meeting.start >= afterMinutes);
-
-      if (!startsLateEnough) {
-        return false;
-      }
-    }
-
-    if (beforeMinutes !== null) {
-      const endsEarlyEnough = meetings.length > 0 && meetings.every((meeting) => meeting.end <= beforeMinutes);
-
-      if (!endsEarlyEnough) {
-        return false;
-      }
-    }
-
-    return true;
-  });
-}
-
-// Keep the visible results synced with the backend search plus the local filters.
-// async/await is JavaScript's readable syntax for working with Promises.
-// You can think of it as similar to "wait for this network call to finish, then continue".
-async function refreshVisibleResults() {
-  let filteredResults = state.rawSearchResults;
-  const serverFilterPayload = buildServerFilterPayload();
-
-  if (Object.keys(serverFilterPayload).length > 0 && state.rawSearchResults.length > 0) {
-    filteredResults = await filterSearchResults(serverFilterPayload);
-    rememberCourseIds(filteredResults);
-  }
-
-  state.visibleSearchResults = applyClientFilters(filteredResults);
-}
-
-// Load a real example course so the example card looks like a true search result.
-// We try several queries in order until the backend gives us at least one usable course.
-async function loadExampleCourse() {
-  if (!state.token || state.exampleStatus !== 'idle') {
-    return;
-  }
-
-  state.exampleStatus = 'loading';
-  renderApp();
-
-  try {
-    for (const query of EXAMPLE_QUERIES) {
-      const results = await searchCourses(query);
-      rememberCourseIds(results);
-
-      const exampleCourse = safeArray(results).find((course) => getCourseMeetings(course).length > 0) ?? safeArray(results)[0] ?? null;
-
-      if (exampleCourse) {
-        state.exampleCourse = exampleCourse;
-        state.exampleStatus = 'ready';
-        renderApp();
-        return;
-      }
-    }
-
-    state.exampleCourse = null;
-    state.exampleStatus = 'error';
-  } catch (error) {
-    state.exampleCourse = null;
-    state.exampleStatus = 'error';
-  }
-
-  renderApp();
-}
-
-// Create a small labeled input group so forms stay consistent.
-// document.createElement(...) creates a new HTML element in memory.
-// We then configure it and attach it to the page later.
+// Create a small labeled text or number input group so forms stay consistent.
 function buildLabeledInput({ label, type = 'text', value = '', onInput, placeholder = '' }) {
   const wrapper = document.createElement('label');
   wrapper.className = 'field';
@@ -426,8 +275,8 @@ function buildLabeledInput({ label, type = 'text', value = '', onInput, placehol
   return wrapper;
 }
 
-// Create a select field so the filter controls all match visually.
-// A select element is the browser's dropdown control.
+// NEW HELPER: Re-added to support the Professor Dropdown.
+// A select element is the browser's built-in dropdown control.
 function buildLabeledSelect({ label, value, options, onChange, emptyLabel }) {
   const wrapper = document.createElement('label');
   wrapper.className = 'field';
@@ -441,18 +290,27 @@ function buildLabeledSelect({ label, value, options, onChange, emptyLabel }) {
   select.className = 'field__input';
   select.value = value;
 
+  // The first option is usually empty to allow the user to "clear" their selection.
   const emptyOption = document.createElement('option');
   emptyOption.value = '';
   emptyOption.textContent = emptyLabel;
   select.appendChild(emptyOption);
 
+  // Loop through the data (in this case, faculty names) and add them as clickable options.
   safeArray(options).forEach((optionValue) => {
     const option = document.createElement('option');
     option.value = optionValue;
     option.textContent = String(optionValue);
+
+    // If this option matches the user's current state, select it automatically.
+    if (String(optionValue) === value) {
+      option.selected = true;
+    }
+
     select.appendChild(option);
   });
 
+  // When the user clicks a new dropdown option, trigger the passed-in change function.
   select.addEventListener('change', (event) => onChange(event.target.value));
   wrapper.appendChild(select);
 
@@ -460,16 +318,15 @@ function buildLabeledSelect({ label, value, options, onChange, emptyLabel }) {
 }
 
 // Create a checkbox for a day-of-week filter.
-// When the checkbox changes, we write the new true/false value into state.
 function buildDayCheckbox(day) {
   const wrapper = document.createElement('label');
   wrapper.className = 'day-toggle';
 
   const input = document.createElement('input');
   input.type = 'checkbox';
-  input.checked = state.searchDraft.selectedDays[day];
+  input.checked = state.searchDraft.filterDays[day];
   input.addEventListener('change', (event) => {
-    state.searchDraft.selectedDays[day] = event.target.checked;
+    state.searchDraft.filterDays[day] = event.target.checked;
   });
   wrapper.appendChild(input);
 
@@ -480,8 +337,7 @@ function buildDayCheckbox(day) {
   return wrapper;
 }
 
-// Show one course as a reusable card in both search results and the example panel.
-// Reusing one renderer avoids copy-pasting the same HTML-building logic twice.
+// Show one course as a reusable card in both search results and the schedule panel.
 function renderCourseCard(course, { buttonLabel, onPrimaryAction, primaryDisabled = false, footerNote = '' }) {
   const card = document.createElement('article');
   card.className = 'course-card';
@@ -527,11 +383,8 @@ function renderCourseCard(course, { buttonLabel, onPrimaryAction, primaryDisable
   return card;
 }
 
-// Add a course only if a schedule is open and the new course does not overlap.
-// This function is an event handler: it runs when the user clicks an add button.
 async function handleAddCourse(course) {
   showError('');
-
   if (!state.currentSchedule) {
     showError('Create or load a schedule before adding a course.');
     return;
@@ -543,9 +396,8 @@ async function handleAddCourse(course) {
   }
 
   const courseId = resolveCourseId(course);
-
   if (courseId === null || courseId === undefined) {
-    showError('This course is missing an ID in the loaded schedule data. See the MVP TODO at the top of main.js.');
+    showError('This course is missing an ID in the loaded schedule data.');
     return;
   }
 
@@ -557,18 +409,14 @@ async function handleAddCourse(course) {
   }
 }
 
-// Remove a course when we have enough data to identify it on the backend.
-// Because the backend contract is incomplete here, we explain the limitation clearly to the user.
 async function handleRemoveCourse(course) {
   showError('');
-
   if (!state.currentSchedule) {
     showError('Load a schedule before removing a course.');
     return;
   }
 
   const courseId = resolveCourseId(course);
-
   if (courseId === null || courseId === undefined) {
     showError('Remove is limited right now because the backend schedule response does not include course section IDs.');
     return;
@@ -582,97 +430,96 @@ async function handleRemoveCourse(course) {
   }
 }
 
-// Run the backend search and then apply both server and client filters.
-// The overall flow is:
-// 1. Ask the backend for search results.
-// 2. Ask the backend for filter options.
-// 3. Apply extra browser-side filters.
-// 4. Re-render the page.
+// Base keyword search against the server. Clears any previous filters.
 async function handleSearch() {
   showError('');
-  state.hasAttemptedSearch = true;
+  const keyword = state.searchDraft.keyword.trim();
 
-  const baseQuery = buildBaseQuery();
-
-  if (!baseQuery) {
-    if (state.searchDraft.professor.trim()) {
-      showError('Professor-only search needs backend support. For now, start with a keyword, department, or course code.');
-      return;
-    }
-
-    showError('Enter a keyword, department, or course code before searching.');
+  if (!keyword) {
+    showError('Enter a keyword to search.');
     return;
   }
 
   try {
-    state.rawSearchResults = await searchCourses(baseQuery);
+    // 1. Run the base search first
+    state.rawSearchResults = await searchCourses(keyword);
     rememberCourseIds(state.rawSearchResults);
 
+    state.visibleSearchResults = state.rawSearchResults;
+    state.hasAttemptedSearch = true;
+
+    // 2. Clear any previous filter state since this is a new search session
+    state.searchDraft.filterSubject = '';
+    state.searchDraft.filterNumber = '';
+    state.searchDraft.filterFaculty = '';
+    state.searchDraft.filterCredits = '';
+    state.searchDraft.filterStartTime = '';
+    state.searchDraft.filterEndTime = '';
+    state.searchDraft.filterDays = { M: false, T: false, W: false, R: false, F: false };
+
+    // 3. NEW: Load the available Filter Options from the backend to populate the Professor dropdown
     try {
-      const filterOptions = await getFilterOptions();
-      state.availableFilterOptions = normalizeFilterOptions(filterOptions);
+      const optionsDto = await getFilterOptions();
+      // Extract the faculty list, make sure it's an array, and sort it alphabetically for the UI
+      state.availableFaculty = safeArray(optionsDto?.faculty).slice().sort();
     } catch (filterError) {
-      state.availableFilterOptions = normalizeFilterOptions(null);
+      // If retrieving options fails for some reason, just fallback to an empty dropdown list
+      state.availableFaculty = [];
     }
 
-    await refreshVisibleResults();
     renderApp();
   } catch (error) {
     showError(error?.message || 'Search failed.');
   }
 }
 
-// Re-run the current filters without asking the backend to perform a new keyword search.
-// This is cheaper than a brand new search because we already have the previous result set.
+// Sends typed strings and day/time objects straight to backend FilterOptionsDTO mapping
 async function handleApplyFilters() {
   showError('');
 
-  if (state.rawSearchResults.length === 0) {
+  if (!state.hasAttemptedSearch || state.rawSearchResults.length === 0) {
     showError('Search for courses first, then refine the results with filters.');
     return;
   }
 
   try {
-    await refreshVisibleResults();
+    const filterPayload = buildServerFilterPayload();
+
+    // If no filters are active, just show the raw base search again
+    if (Object.keys(filterPayload).length === 0) {
+      state.visibleSearchResults = state.rawSearchResults;
+    } else {
+      state.visibleSearchResults = await filterSearchResults(filterPayload);
+      rememberCourseIds(state.visibleSearchResults);
+    }
+
     renderApp();
   } catch (error) {
     showError(error?.message || 'Could not apply filters.');
   }
 }
 
-// Reset the search and filter form so the user can start over quickly.
-// Here we replace the nested searchDraft object with a brand new clean object.
+// Fully resets search and filter states
 function handleClearSearchState() {
   state.hasAttemptedSearch = false;
   state.rawSearchResults = [];
   state.visibleSearchResults = [];
-  state.availableFilterOptions = normalizeFilterOptions(null);
+  state.availableFaculty = []; // Clear the professor dropdown options
   state.searchDraft = {
     keyword: '',
-    department: '',
-    courseCode: '',
-    professor: '',
-    selectedSubject: '',
-    selectedCredits: '',
-    selectedFaculty: '',
-    startAfter: '',
-    endBefore: '',
-    selectedDays: {
-      M: false,
-      T: false,
-      W: false,
-      R: false,
-      F: false,
-    },
+    filterSubject: '',
+    filterNumber: '',
+    filterFaculty: '',
+    filterCredits: '',
+    filterStartTime: '',
+    filterEndTime: '',
+    filterDays: { M: false, T: false, W: false, R: false, F: false },
   };
   renderApp();
 }
 
-// Create a new schedule through the backend and immediately display it.
-// trim() removes accidental spaces from the start/end of the text input.
 async function handleCreateSchedule() {
   const scheduleName = state.pendingScheduleName.trim();
-
   showError('');
 
   if (!scheduleName) {
@@ -689,11 +536,8 @@ async function handleCreateSchedule() {
   }
 }
 
-// Load an existing schedule from the backend by ID.
-// Number(...) converts the input text into a numeric value.
 async function handleLoadSchedule() {
   const scheduleId = Number(state.pendingScheduleId);
-
   showError('');
 
   if (!Number.isInteger(scheduleId) || scheduleId <= 0) {
@@ -709,31 +553,23 @@ async function handleLoadSchedule() {
   }
 }
 
-// Log the user out locally and return to the login screen.
-// Notice that we clear both the token and the in-memory app state.
 function handleLogout() {
   state.token = '';
   state.hasAttemptedSearch = false;
   state.currentSchedule = null;
   state.rawSearchResults = [];
   state.visibleSearchResults = [];
-  state.exampleCourse = null;
-  state.exampleStatus = 'idle';
+  state.availableFaculty = [];
   clearAuthToken();
   renderApp();
 }
 
-// Draw the login or register screen depending on the current auth mode.
-// This function creates the login page entirely with JavaScript instead of writing HTML by hand.
 function renderAuthScreen() {
   clearApp();
-
   const app = document.getElementById('app');
-  // main is the semantic HTML tag for the main content area of the page.
   const shell = document.createElement('main');
   shell.className = 'auth-shell';
 
-  // section is a logical chunk of the page, like one panel/card.
   const panel = document.createElement('section');
   panel.className = 'auth-panel';
   shell.appendChild(panel);
@@ -801,7 +637,6 @@ function renderAuthScreen() {
     panel.appendChild(emailField);
   }
 
-  // addEventListener wires a function to a browser event such as a click.
   const submitButton = document.createElement('button');
   submitButton.className = 'button button--primary';
   submitButton.textContent = state.isRegistering ? 'Register and sign in' : 'Sign in';
@@ -830,7 +665,6 @@ function renderAuthScreen() {
       const loginResponse = await login({ username, password });
       state.token = loginResponse.token;
       setAuthToken(loginResponse.token);
-      state.exampleStatus = 'idle';
       renderApp();
     } catch (error) {
       showError(error?.message || 'Authentication failed.');
@@ -850,8 +684,6 @@ function renderAuthScreen() {
   app.appendChild(shell);
 }
 
-// Build the schedule controls for creating or loading a schedule.
-// Returning a DOM node from helper functions is a common vanilla-JS pattern.
 function renderScheduleControls() {
   const panel = document.createElement('section');
   panel.className = 'panel';
@@ -906,8 +738,7 @@ function renderScheduleControls() {
   return panel;
 }
 
-// Build the search and filter panel.
-// This is the part of the UI that tries to satisfy the MVP search requirements.
+// Build the search and filter panel to exactly match backend rules.
 function renderSearchPanel() {
   const panel = document.createElement('section');
   panel.className = 'panel';
@@ -919,15 +750,16 @@ function renderSearchPanel() {
 
   const intro = document.createElement('p');
   intro.className = 'panel__copy';
-  intro.textContent = 'The backend currently powers keyword search and a few exact filters. Professor name and time-range matching are refined on the frontend after the initial search.';
+  intro.textContent = 'Enter a keyword below to retrieve courses. After searching, use the filters to narrow them down directly on the backend.';
   panel.appendChild(intro);
 
+  // 1. KEYWORD SEARCH
   const searchGrid = document.createElement('div');
   searchGrid.className = 'form-grid';
   panel.appendChild(searchGrid);
 
   searchGrid.appendChild(buildLabeledInput({
-    label: 'Keyword or course name',
+    label: 'Keyword Search',
     value: state.searchDraft.keyword,
     placeholder: 'Example: psychology',
     onInput: (value) => {
@@ -935,166 +767,119 @@ function renderSearchPanel() {
     },
   }));
 
-  searchGrid.appendChild(buildLabeledInput({
-    label: 'Department or subject',
-    value: state.searchDraft.department,
-    placeholder: 'Example: PSYE or MATH',
-    onInput: (value) => {
-      state.searchDraft.department = value;
-    },
-  }));
-
-  searchGrid.appendChild(buildLabeledInput({
-    label: 'Exact course code',
-    value: state.searchDraft.courseCode,
-    placeholder: 'Example: COMP 442',
-    onInput: (value) => {
-      state.searchDraft.courseCode = value;
-    },
-  }));
-
-  searchGrid.appendChild(buildLabeledInput({
-    label: 'Professor name contains',
-    value: state.searchDraft.professor,
-    placeholder: 'Example: Smith',
-    onInput: (value) => {
-      state.searchDraft.professor = value;
-    },
-  }));
-
-  searchGrid.appendChild(buildLabeledSelect({
-    label: 'Subject filter',
-    value: state.searchDraft.selectedSubject,
-    options: state.availableFilterOptions.subjects,
-    emptyLabel: 'Any subject',
-    onChange: (value) => {
-      state.searchDraft.selectedSubject = value;
-    },
-  }));
-
-  searchGrid.appendChild(buildLabeledSelect({
-    label: 'Credits filter',
-    value: state.searchDraft.selectedCredits,
-    options: state.availableFilterOptions.credits,
-    emptyLabel: 'Any credit value',
-    onChange: (value) => {
-      state.searchDraft.selectedCredits = value;
-    },
-  }));
-
-  searchGrid.appendChild(buildLabeledSelect({
-    label: 'Faculty filter',
-    value: state.searchDraft.selectedFaculty,
-    options: state.availableFilterOptions.faculty,
-    emptyLabel: 'Any faculty member',
-    onChange: (value) => {
-      state.searchDraft.selectedFaculty = value;
-    },
-  }));
-
-  searchGrid.appendChild(buildLabeledInput({
-    label: 'Classes starting after',
-    type: 'time',
-    value: state.searchDraft.startAfter,
-    onInput: (value) => {
-      state.searchDraft.startAfter = value;
-    },
-  }));
-
-  searchGrid.appendChild(buildLabeledInput({
-    label: 'Classes ending before',
-    type: 'time',
-    value: state.searchDraft.endBefore,
-    onInput: (value) => {
-      state.searchDraft.endBefore = value;
-    },
-  }));
-
-  const dayGroup = document.createElement('div');
-  dayGroup.className = 'field field--full-width';
-
-  const dayLabel = document.createElement('span');
-  dayLabel.className = 'field__label';
-  dayLabel.textContent = 'Meeting days';
-  dayGroup.appendChild(dayLabel);
-
-  const dayRow = document.createElement('div');
-  dayRow.className = 'day-toggle-row';
-  DAY_ORDER.forEach((day) => {
-    dayRow.appendChild(buildDayCheckbox(day));
-  });
-  dayGroup.appendChild(dayRow);
-  searchGrid.appendChild(dayGroup);
-
-  const actions = document.createElement('div');
-  actions.className = 'button-row';
+  const searchActions = document.createElement('div');
+  searchActions.className = 'button-row';
 
   const searchButton = document.createElement('button');
   searchButton.className = 'button button--primary';
   searchButton.textContent = 'Run search';
   searchButton.addEventListener('click', handleSearch);
-  actions.appendChild(searchButton);
-
-  const applyFiltersButton = document.createElement('button');
-  applyFiltersButton.className = 'button button--secondary';
-  applyFiltersButton.textContent = 'Apply filters';
-  applyFiltersButton.addEventListener('click', handleApplyFilters);
-  actions.appendChild(applyFiltersButton);
+  searchActions.appendChild(searchButton);
 
   const clearButton = document.createElement('button');
   clearButton.className = 'button button--ghost';
-  clearButton.textContent = 'Clear search';
+  clearButton.textContent = 'Clear all';
   clearButton.addEventListener('click', handleClearSearchState);
-  actions.appendChild(clearButton);
+  searchActions.appendChild(clearButton);
 
-  panel.appendChild(actions);
+  panel.appendChild(searchActions);
 
-  return panel;
-}
+  // 2. FILTERS (only shown after a base search is successfully run)
+  if (state.hasAttemptedSearch) {
+    const divider = document.createElement('hr');
+    divider.style.margin = '24px 0 16px 0';
+    divider.style.border = 'none';
+    divider.style.borderTop = '1px solid #d8d3c7';
+    panel.appendChild(divider);
 
-// Render the example course area under the search controls before the user searches.
-// This gives you a built-in test card so you can verify the calendar layout quickly.
-function renderExamplePanel() {
-  const panel = document.createElement('section');
-  panel.className = 'panel';
+    const filterTitle = document.createElement('h3');
+    filterTitle.className = 'panel__title';
+    filterTitle.style.fontSize = '1.1rem';
+    filterTitle.textContent = 'Refine Results (Exact Matches)';
+    panel.appendChild(filterTitle);
 
-  const title = document.createElement('h2');
-  title.className = 'panel__title';
-  title.textContent = 'Example course';
-  panel.appendChild(title);
+    const filterGrid = document.createElement('div');
+    filterGrid.className = 'form-grid';
+    panel.appendChild(filterGrid);
 
-  const copy = document.createElement('p');
-  copy.className = 'panel__copy';
-  copy.textContent = 'This card is loaded from the backend so you can test the calendar before doing your own search.';
-  panel.appendChild(copy);
-
-  if (state.exampleStatus === 'loading') {
-    const loading = document.createElement('p');
-    loading.className = 'panel__copy';
-    loading.textContent = 'Loading an example course from the backend...';
-    panel.appendChild(loading);
-    return panel;
-  }
-
-  if (state.exampleCourse) {
-    panel.appendChild(renderCourseCard(state.exampleCourse, {
-      buttonLabel: 'Add example course',
-      onPrimaryAction: () => {
-        handleAddCourse(state.exampleCourse);
-      },
+    filterGrid.appendChild(buildLabeledInput({
+      label: 'Subject (e.g., PSYE)',
+      value: state.searchDraft.filterSubject,
+      placeholder: 'COMP',
+      onInput: (value) => { state.searchDraft.filterSubject = value; },
     }));
-    return panel;
+
+    filterGrid.appendChild(buildLabeledInput({
+      label: 'Course Number',
+      type: 'number',
+      value: state.searchDraft.filterNumber,
+      placeholder: '442',
+      onInput: (value) => { state.searchDraft.filterNumber = value; },
+    }));
+
+    // NEW: Render Professor as a dropdown Select element using the data retrieved from the backend
+    filterGrid.appendChild(buildLabeledSelect({
+      label: 'Professor Name',
+      value: state.searchDraft.filterFaculty,
+      options: state.availableFaculty,
+      emptyLabel: 'Any Professor',
+      onChange: (value) => { state.searchDraft.filterFaculty = value; },
+    }));
+
+    filterGrid.appendChild(buildLabeledInput({
+      label: 'Credits',
+      type: 'number',
+      value: state.searchDraft.filterCredits,
+      placeholder: '3',
+      onInput: (value) => { state.searchDraft.filterCredits = value; },
+    }));
+
+    filterGrid.appendChild(buildLabeledInput({
+      label: 'Occurs after time',
+      type: 'time',
+      value: state.searchDraft.filterStartTime,
+      onInput: (value) => { state.searchDraft.filterStartTime = value; },
+    }));
+
+    filterGrid.appendChild(buildLabeledInput({
+      label: 'Occurs before time',
+      type: 'time',
+      value: state.searchDraft.filterEndTime,
+      onInput: (value) => { state.searchDraft.filterEndTime = value; },
+    }));
+
+    const dayGroup = document.createElement('div');
+    dayGroup.className = 'field field--full-width';
+
+    const dayLabel = document.createElement('span');
+    dayLabel.className = 'field__label';
+    dayLabel.textContent = 'Meeting days required';
+    dayGroup.appendChild(dayLabel);
+
+    const dayRow = document.createElement('div');
+    dayRow.className = 'day-toggle-row';
+    DAY_ORDER.forEach((day) => {
+      dayRow.appendChild(buildDayCheckbox(day));
+    });
+    dayGroup.appendChild(dayRow);
+    filterGrid.appendChild(dayGroup);
+
+    const filterActions = document.createElement('div');
+    filterActions.className = 'button-row';
+
+    const applyFiltersButton = document.createElement('button');
+    applyFiltersButton.className = 'button button--secondary';
+    applyFiltersButton.textContent = 'Apply filters to backend';
+    applyFiltersButton.addEventListener('click', handleApplyFilters);
+    filterActions.appendChild(applyFiltersButton);
+
+    panel.appendChild(filterActions);
   }
 
-  const fallback = document.createElement('p');
-  fallback.className = 'panel__copy';
-  fallback.textContent = 'No example course is available yet. If this persists, verify that the backend search endpoint returns results after login.';
-  panel.appendChild(fallback);
   return panel;
 }
 
 // Render the current search results list.
-// If a search has been attempted but no results match, we show an empty-state message.
 function renderResultsPanel() {
   const panel = document.createElement('section');
   panel.className = 'panel';
@@ -1111,13 +896,20 @@ function renderResultsPanel() {
     empty.className = 'panel__copy';
     empty.textContent = state.hasAttemptedSearch
       ? 'No courses matched the current search and filter settings.'
-      : 'No search results yet. Run a search, then refine the results with the filters above.';
+      : 'No search results yet. Run a keyword search above.';
     panel.appendChild(empty);
     return panel;
   }
 
   const list = document.createElement('div');
   list.className = 'course-list';
+
+  // NEW: Added inline CSS styling to make the results panel scrollable.
+  // This ensures that fetching 50+ classes won't stretch the webpage infinitely downwards.
+  // "maxHeight" limits the box height, and "overflowY = 'auto'" adds a vertical scrollbar.
+  list.style.maxHeight = '600px';
+  list.style.overflowY = 'auto';
+  list.style.paddingRight = '10px'; // Adds a tiny bit of space so the scrollbar doesn't overlap text
 
   results.forEach((course) => {
     list.appendChild(renderCourseCard(course, {
@@ -1132,8 +924,6 @@ function renderResultsPanel() {
   return panel;
 }
 
-// Render a list of courses currently inside the candidate schedule.
-// This is the "selected courses" view separate from the calendar visualization.
 function renderScheduledCoursesPanel() {
   const panel = document.createElement('section');
   panel.className = 'panel';
@@ -1175,9 +965,6 @@ function renderScheduledCoursesPanel() {
   return panel;
 }
 
-// Render a weekly calendar with vertically positioned class blocks.
-// CSS absolute positioning is used here so class blocks can appear at the correct
-// vertical time slot instead of only in a simple table row.
 function renderCalendarPanel() {
   const panel = document.createElement('section');
   panel.className = 'panel panel--calendar';
@@ -1229,7 +1016,6 @@ function renderCalendarPanel() {
   timeRail.className = 'calendar-week__time-rail';
   body.appendChild(timeRail);
 
-  // This loop creates the time labels on the left edge of the calendar.
   for (let minute = CALENDAR_START_MINUTES; minute <= CALENDAR_END_MINUTES; minute += 60) {
     const label = document.createElement('div');
     label.className = 'calendar-week__time-label';
@@ -1252,7 +1038,6 @@ function renderCalendarPanel() {
       column.appendChild(line);
     }
 
-    // For each day column, place every matching course meeting into the correct spot.
     courses.forEach((course) => {
       getCourseMeetings(course)
         .filter((meeting) => meeting.day === day)
@@ -1284,7 +1069,6 @@ function renderCalendarPanel() {
 }
 
 // Draw the main application screen after the user logs in.
-// This is the top-level "authenticated app" renderer.
 function renderMainScreen() {
   clearApp();
 
@@ -1329,9 +1113,9 @@ function renderMainScreen() {
   leftColumn.className = 'app-column';
   layout.appendChild(leftColumn);
 
+  // Note: the renderExamplePanel() function was removed from here.
   leftColumn.appendChild(renderScheduleControls());
   leftColumn.appendChild(renderSearchPanel());
-  leftColumn.appendChild(renderExamplePanel());
   leftColumn.appendChild(renderResultsPanel());
 
   const rightColumn = document.createElement('section');
@@ -1342,25 +1126,18 @@ function renderMainScreen() {
   rightColumn.appendChild(renderScheduledCoursesPanel());
 
   app.appendChild(shell);
-
-  if (state.exampleStatus === 'idle') {
-    void loadExampleCourse();
-  }
 }
 
 // Pick the correct screen based on whether the user is authenticated.
-// This acts like a very small router or screen controller.
 function renderApp() {
   if (state.token) {
     renderMainScreen();
     return;
   }
-
   renderAuthScreen();
 }
 
 // Start the frontend once the DOM exists.
-// DOMContentLoaded means the initial HTML has been parsed and the page is ready for JS.
 document.addEventListener('DOMContentLoaded', () => {
   renderApp();
 });
