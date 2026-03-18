@@ -73,6 +73,7 @@ public class SearchService {
                 .map(result -> new SearchItemDTO(
                         result.getSubject(),
                         result.getNumber(),
+                        result.getSection(),
                         result.getName(),
                         result.getCredits(),
                         result.getId(),
@@ -100,7 +101,6 @@ public class SearchService {
         }
 
         // filter user's search results by filter
-
         List<CourseSection> filtered = search.getResults().stream()
                 .filter(c -> filter.getSubjects() == null || filter.getSubjects().isEmpty()
                         || filter.getSubjects().contains(c.getSubject()))
@@ -131,6 +131,7 @@ public class SearchService {
                 .map(c -> new SearchItemDTO(
                         c.getSubject(),
                         c.getNumber(),
+                        c.getSection(),
                         c.getName(),
                         c.getCredits(),
                         c.getId(),

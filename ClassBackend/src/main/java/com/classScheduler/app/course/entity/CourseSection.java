@@ -3,6 +3,7 @@ package com.classScheduler.app.course.entity;
 import com.classScheduler.app.schedule.entity.Schedule;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -16,6 +17,7 @@ import java.util.List;
 @Getter
 @Setter
 @Table(name = "course_sections")
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class CourseSection {
 
 // Example CourseSection JSON:
@@ -40,6 +42,7 @@ public class CourseSection {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "courseSection_id", nullable = false)
+    @EqualsAndHashCode.Include
     private Long id;
 
     private String subject;        // "ACCT"

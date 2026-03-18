@@ -32,7 +32,6 @@ public class SearchController {
 
     @PostMapping("/filter")
     public ResponseEntity<List<SearchItemDTO>> filter(@Valid @RequestBody SearchFilterDTO filter) {
-
         return ResponseEntity.ok(searchService.filterResults(filter));
     }
 

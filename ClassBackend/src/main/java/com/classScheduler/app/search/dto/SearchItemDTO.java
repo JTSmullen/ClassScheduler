@@ -17,6 +17,7 @@ import java.util.List;
 public class SearchItemDTO {
     private String subject;
     private int number;
+    private String section;
     private String name;
     private int credits;
     private Long id;
