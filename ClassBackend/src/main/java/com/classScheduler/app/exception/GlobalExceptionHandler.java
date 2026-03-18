@@ -3,6 +3,7 @@ package com.classScheduler.app.exception;
 import com.classScheduler.app.exception.customs.CourseSectionNotFoundException;
 import com.classScheduler.app.exception.customs.ScheduleNotFoundException;
 
+import com.classScheduler.app.exception.customs.ScheduleWithNameAndUserExists;
 import com.classScheduler.app.exception.customs.UserAlreadyExistsException;
 import com.classScheduler.app.exception.dto.ErrorResponseDto;
 import org.springframework.http.HttpStatus;
@@ -23,6 +24,11 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ErrorResponseDto handleScheduleNotFound(ScheduleNotFoundException e) {
         return new ErrorResponseDto(e.getMessage(), HttpStatus.NOT_FOUND.value());
+    }
+
+    @ExceptionHandler(ScheduleWithNameAndUserExists.class)
+    public ProblemDetail handleScheduleNameAndUserPairExists(ScheduleWithNameAndUserExists e) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, e.getMessage());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
