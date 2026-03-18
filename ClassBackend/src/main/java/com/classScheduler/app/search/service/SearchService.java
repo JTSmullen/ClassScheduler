@@ -65,14 +65,25 @@ public class SearchService {
         for (String keyword : keywords) {
             results.addAll(courseSectionRepository.searchByKeyword(keyword));
         }
+
+        // explicitly remove duplicate course sections since it seems like there are some duplicates in db
+        Set<CourseSection> uniqueResults = new HashSet<>(results.stream()
+                .collect(Collectors.toMap(
+                        c -> c.getSubject() + "-" + c.getNumber() + "-" + c.getSection(),
+                        c -> c,
+                        (existing, replacement) -> existing // If duplicate found, just keep the first one
+                ))
+                .values());
+
         // make arraylist from set with no duplicates
-        search.setResults(new ArrayList<>(results));
+        search.setResults(uniqueResults);
 
         // make SearchItemDTO. Less items to avoid sending too much data to frontend. Will be able to look at individual classes to get more info. Will be done by getting from database entry.
-        List<SearchItemDTO> resultsDTO = results.stream()
+        List<SearchItemDTO> resultsDTO = uniqueResults.stream()
                 .map(result -> new SearchItemDTO(
                         result.getSubject(),
                         result.getNumber(),
+                        result.getSection(),
                         result.getName(),
                         result.getCredits(),
                         result.getId(),
@@ -100,10 +111,9 @@ public class SearchService {
         }
 
         // filter user's search results by filter
-
         List<CourseSection> filtered = search.getResults().stream()
                 .filter(c -> filter.getSubjects() == null || filter.getSubjects().isEmpty()
-                        || filter.getSubjects().contains(c.getSubject()))
+                        || filter.getSubjects().stream().anyMatch(sub -> sub.equalsIgnoreCase(c.getSubject())))
                 .filter(c -> filter.getCredits() == null || filter.getCredits().isEmpty()
                         || filter.getCredits().contains(c.getCredits()))
                 .filter(c -> filter.getNumbers() == null || filter.getNumbers().isEmpty()
@@ -131,6 +141,7 @@ public class SearchService {
                 .map(c -> new SearchItemDTO(
                         c.getSubject(),
                         c.getNumber(),
+                        c.getSection(),
                         c.getName(),
                         c.getCredits(),
                         c.getId(),
