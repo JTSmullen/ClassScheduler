@@ -7,6 +7,7 @@ import com.classScheduler.app.course.repository.CourseRepository;
 import com.classScheduler.app.course.repository.CourseSectionRepository;
 import com.classScheduler.app.exception.customs.CourseSectionNotFoundException;
 import com.classScheduler.app.exception.customs.ScheduleNotFoundException;
+import com.classScheduler.app.exception.customs.ScheduleWithNameAndUserExists;
 import com.classScheduler.app.schedule.dto.NewScheduleRequest;
 import com.classScheduler.app.schedule.dto.ScheduleDTO;
 import com.classScheduler.app.schedule.entity.Schedule;
@@ -44,7 +45,6 @@ public class ScheduleService {
         this.securityUtil = securityUtil;
         this.userRepository = userRepository;
         this.courseSectionRepo = courseSectionRepo;
-
 
     }
 
@@ -152,6 +152,10 @@ public class ScheduleService {
     public ScheduleDTO newSchedule(NewScheduleRequest newScheduleRequest) {
         Long userId = securityUtil.getCurrentUser().orElseThrow().getId();
         User user = userRepository.findById(userId).orElseThrow();
+
+        if (scheduleRepo.existsByUserAndName(user, newScheduleRequest.getName())) {
+            throw new ScheduleWithNameAndUserExists("Schedule with name " + newScheduleRequest.getName() + " already exists");
+        }
 
         Schedule schedule = new Schedule();
         schedule.setName(newScheduleRequest.getName());
