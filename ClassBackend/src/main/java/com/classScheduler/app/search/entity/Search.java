@@ -9,6 +9,7 @@ import lombok.Setter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.HashSet;
 
 @Getter
 @Setter
@@ -26,7 +27,7 @@ public class Search {
             joinColumns = @JoinColumn(name = "search_id"),
             inverseJoinColumns = @JoinColumn(name = "course_section_id")
     )
-    private List<CourseSection> results = new ArrayList<>();
+    private Set<CourseSection> results = new HashSet<>();
 
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id", nullable = false)
