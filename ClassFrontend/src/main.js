@@ -47,6 +47,7 @@ const state = {
   token: getStoredAuthToken(),
   isRegistering: false,
   hasAttemptedSearch: false,
+  hasCompletedSearch: false,
   userInfo: null,
   userInfoStatus: 'idle',
   currentSchedule: null,
@@ -628,7 +629,6 @@ async function handleRemoveCourse(course) {
 async function handleSearch() {
   showError('');
   clearCourseActionFeedback();
-  state.hasAttemptedSearch = true;
 
   const baseQuery = buildBaseQuery();
 
@@ -638,7 +638,9 @@ async function handleSearch() {
   }
 
   try {
+    state.hasAttemptedSearch = true;
     state.rawSearchResults = dedupeCourses(await searchCourses(baseQuery));
+    state.hasCompletedSearch = true;
     rememberCourseIds(state.rawSearchResults);
 
     try {
@@ -651,6 +653,7 @@ async function handleSearch() {
     await refreshVisibleResults();
     renderApp();
   } catch (error) {
+    state.hasCompletedSearch = false;
     showError(error?.message || 'Search failed.');
   }
 }
@@ -682,6 +685,7 @@ async function handleApplyFilters() {
 // Here we replace the nested searchDraft object with a brand new clean object.
 function handleClearSearchState() {
   state.hasAttemptedSearch = false;
+  state.hasCompletedSearch = false;
   state.rawSearchResults = [];
   state.visibleSearchResults = [];
   state.availableFilterOptions = normalizeFilterOptions(null);
@@ -754,6 +758,7 @@ async function handleLoadSchedule() {
 function handleLogout() {
   state.token = '';
   state.hasAttemptedSearch = false;
+  state.hasCompletedSearch = false;
   state.userInfo = null;
   state.userInfoStatus = 'idle';
   state.currentSchedule = null;
@@ -999,7 +1004,7 @@ function renderSearchPanel() {
 
   const intro = document.createElement('p');
   intro.className = 'panel__copy';
-  intro.innerHTML = 'Step 1: search by keyword.<br>Step 2: narrow by course details.<br>Step 3: narrow by meeting time.(optional)';
+  intro.innerHTML = 'Step 1: search by keyword.<br>Step 2: narrow by course details.<br>Step 3: narrow by meeting time (optional).';
   panel.appendChild(intro);
 
   const searchGrid = document.createElement('div');
@@ -1020,115 +1025,119 @@ function renderSearchPanel() {
     },
   }));
 
-  const stepTwoLabel = document.createElement('div');
-  stepTwoLabel.className = 'field field--full-width';
-  stepTwoLabel.innerHTML = '<span class="field__label">Step 2: Course filters</span>';
-  searchGrid.appendChild(stepTwoLabel);
+  if (state.hasCompletedSearch) {
+    const stepTwoLabel = document.createElement('div');
+    stepTwoLabel.className = 'field field--full-width';
+    stepTwoLabel.innerHTML = '<span class="field__label">Step 2: Course filters</span>';
+    searchGrid.appendChild(stepTwoLabel);
 
-  searchGrid.appendChild(buildLabeledSelect({
-    label: 'Department / subject',
-    value: state.searchDraft.selectedSubject,
-    options: state.availableFilterOptions.subjects,
-    emptyLabel: 'Any subject',
-    onChange: (value) => {
-      state.searchDraft.selectedSubject = value;
-    },
-  }));
+    searchGrid.appendChild(buildLabeledSelect({
+      label: 'Department / subject',
+      value: state.searchDraft.selectedSubject,
+      options: state.availableFilterOptions.subjects,
+      emptyLabel: 'Any subject',
+      onChange: (value) => {
+        state.searchDraft.selectedSubject = value;
+      },
+    }));
 
-  searchGrid.appendChild(buildLabeledSelect({
-    label: 'Course number',
-    value: state.searchDraft.selectedNumber,
-    options: state.availableFilterOptions.numbers,
-    emptyLabel: 'Any course number',
-    onChange: (value) => {
-      state.searchDraft.selectedNumber = value;
-    },
-  }));
+    searchGrid.appendChild(buildLabeledSelect({
+      label: 'Course number',
+      value: state.searchDraft.selectedNumber,
+      options: state.availableFilterOptions.numbers,
+      emptyLabel: 'Any course number',
+      onChange: (value) => {
+        state.searchDraft.selectedNumber = value;
+      },
+    }));
 
-  searchGrid.appendChild(buildLabeledSelect({
-    label: 'Credits filter',
-    value: state.searchDraft.selectedCredits,
-    options: state.availableFilterOptions.credits,
-    emptyLabel: 'Any credit value',
-    onChange: (value) => {
-      state.searchDraft.selectedCredits = value;
-    },
-  }));
+    searchGrid.appendChild(buildLabeledSelect({
+      label: 'Credits filter',
+      value: state.searchDraft.selectedCredits,
+      options: state.availableFilterOptions.credits,
+      emptyLabel: 'Any credit value',
+      onChange: (value) => {
+        state.searchDraft.selectedCredits = value;
+      },
+    }));
 
-  searchGrid.appendChild(buildLabeledSelect({
-    label: 'Professor',
-    value: state.searchDraft.selectedFaculty,
-    options: state.availableFilterOptions.faculty,
-    emptyLabel: 'Any professor',
-    onChange: (value) => {
-      state.searchDraft.selectedFaculty = value;
-    },
-  }));
+    searchGrid.appendChild(buildLabeledSelect({
+      label: 'Professor',
+      value: state.searchDraft.selectedFaculty,
+      options: state.availableFilterOptions.faculty,
+      emptyLabel: 'Any professor',
+      onChange: (value) => {
+        state.searchDraft.selectedFaculty = value;
+      },
+    }));
 
-  const stepThreeLabel = document.createElement('div');
-  stepThreeLabel.className = 'field field--full-width';
-  stepThreeLabel.innerHTML = '<span class="field__label">Step 3: Time filters</span>';
-  searchGrid.appendChild(stepThreeLabel);
+    const stepThreeLabel = document.createElement('div');
+    stepThreeLabel.className = 'field field--full-width';
+    stepThreeLabel.innerHTML = '<span class="field__label">Step 3: Time filters</span>';
+    searchGrid.appendChild(stepThreeLabel);
 
-  const timeHelp = document.createElement('div');
-  timeHelp.className = 'field field--full-width';
-  timeHelp.innerHTML = '<span class="field__label">Choose at least one day. Matches classes fully inside the time range.</span>';
-  searchGrid.appendChild(timeHelp);
+    const timeHelp = document.createElement('div');
+    timeHelp.className = 'field field--full-width';
+    timeHelp.innerHTML = '<span class="field__label">Choose at least one day. Matches classes fully inside the time range.</span>';
+    searchGrid.appendChild(timeHelp);
 
-  searchGrid.appendChild(buildLabeledInput({
-    label: 'Classes starting after',
-    type: 'time',
-    value: state.searchDraft.startAfter,
-    onInput: (value) => {
-      state.searchDraft.startAfter = value;
-    },
-  }));
+    searchGrid.appendChild(buildLabeledInput({
+      label: 'Classes starting after',
+      type: 'time',
+      value: state.searchDraft.startAfter,
+      onInput: (value) => {
+        state.searchDraft.startAfter = value;
+      },
+    }));
 
-  searchGrid.appendChild(buildLabeledInput({
-    label: 'Classes ending before',
-    type: 'time',
-    value: state.searchDraft.endBefore,
-    onInput: (value) => {
-      state.searchDraft.endBefore = value;
-    },
-  }));
+    searchGrid.appendChild(buildLabeledInput({
+      label: 'Classes ending before',
+      type: 'time',
+      value: state.searchDraft.endBefore,
+      onInput: (value) => {
+        state.searchDraft.endBefore = value;
+      },
+    }));
 
-  const dayGroup = document.createElement('div');
-  dayGroup.className = 'field field--full-width';
+    const dayGroup = document.createElement('div');
+    dayGroup.className = 'field field--full-width';
 
-  const dayLabel = document.createElement('span');
-  dayLabel.className = 'field__label';
-  dayLabel.textContent = 'Meeting days';
-  dayGroup.appendChild(dayLabel);
+    const dayLabel = document.createElement('span');
+    dayLabel.className = 'field__label';
+    dayLabel.textContent = 'Meeting days';
+    dayGroup.appendChild(dayLabel);
 
-  const dayRow = document.createElement('div');
-  dayRow.className = 'day-toggle-row';
-  DAY_ORDER.forEach((day) => {
-    dayRow.appendChild(buildDayCheckbox(day));
-  });
-  dayGroup.appendChild(dayRow);
-  searchGrid.appendChild(dayGroup);
+    const dayRow = document.createElement('div');
+    dayRow.className = 'day-toggle-row';
+    DAY_ORDER.forEach((day) => {
+      dayRow.appendChild(buildDayCheckbox(day));
+    });
+    dayGroup.appendChild(dayRow);
+    searchGrid.appendChild(dayGroup);
+  }
 
   const actions = document.createElement('div');
   actions.className = 'button-row';
 
-  const searchButton = document.createElement('button');
-  searchButton.className = 'button button--primary';
-  searchButton.textContent = 'Run initial keyword search';
-  searchButton.addEventListener('click', handleSearch);
-  actions.appendChild(searchButton);
+  if (state.hasCompletedSearch) {
+    const applyFiltersButton = document.createElement('button');
+    applyFiltersButton.className = 'button button--secondary';
+    applyFiltersButton.textContent = 'Apply filters';
+    applyFiltersButton.addEventListener('click', handleApplyFilters);
+    actions.appendChild(applyFiltersButton);
 
-  const applyFiltersButton = document.createElement('button');
-  applyFiltersButton.className = 'button button--secondary';
-  applyFiltersButton.textContent = 'Apply filters';
-  applyFiltersButton.addEventListener('click', handleApplyFilters);
-  actions.appendChild(applyFiltersButton);
-
-  const clearButton = document.createElement('button');
-  clearButton.className = 'button button--ghost';
-  clearButton.textContent = 'Clear search';
-  clearButton.addEventListener('click', handleClearSearchState);
-  actions.appendChild(clearButton);
+    const clearButton = document.createElement('button');
+    clearButton.className = 'button button--ghost';
+    clearButton.textContent = 'Clear search';
+    clearButton.addEventListener('click', handleClearSearchState);
+    actions.appendChild(clearButton);
+  } else {
+    const searchButton = document.createElement('button');
+    searchButton.className = 'button button--primary';
+    searchButton.textContent = 'Run initial keyword search';
+    searchButton.addEventListener('click', handleSearch);
+    actions.appendChild(searchButton);
+  }
 
   panel.appendChild(actions);
 
