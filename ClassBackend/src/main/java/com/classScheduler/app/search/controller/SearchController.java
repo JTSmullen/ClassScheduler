@@ -42,8 +42,8 @@ public class SearchController {
         return ResponseEntity.ok(searchService.getFilterOptions());
     }
 
-    @PostMapping("/search/details")
-    public ResponseEntity<CourseSectionDTO> searchResultDetails(@Valid @RequestBody Long id) {
+    @GetMapping("/search/{id}")
+    public ResponseEntity<CourseSectionDTO> searchResultDetails(@PathVariable Long id) {
         return ResponseEntity.ok(searchService.getCourseDetails(id));
     }
 }
