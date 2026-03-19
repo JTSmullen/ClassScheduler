@@ -1,5 +1,6 @@
 package com.classScheduler.app.search.controller;
 
+import com.classScheduler.app.course.dto.CourseSectionDTO;
 import com.classScheduler.app.search.dto.SearchItemDTO;
 import com.classScheduler.app.search.service.SearchService;
 import com.classScheduler.app.search.dto.SearchFilterDTO;
@@ -39,5 +40,10 @@ public class SearchController {
     @GetMapping("/filter/options")
     public ResponseEntity<FilterOptionsDTO> filterOptions() {
         return ResponseEntity.ok(searchService.getFilterOptions());
+    }
+
+    @GetMapping("/search/{id}")
+    public ResponseEntity<CourseSectionDTO> searchResultDetails(@PathVariable Long id) {
+        return ResponseEntity.ok(searchService.getCourseDetails(id));
     }
 }
