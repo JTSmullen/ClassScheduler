@@ -2,6 +2,7 @@ package com.classScheduler.app.search.service;
 
 import com.classScheduler.app.course.entity.ClassTime;
 import com.classScheduler.app.course.entity.Course;
+import com.classScheduler.app.exception.customs.CourseSectionNotFoundException;
 import com.classScheduler.app.schedule.dto.ScheduleDTO;
 import com.classScheduler.app.schedule.entity.Schedule;
 import com.classScheduler.app.search.dto.FilterOptionsDTO;
@@ -182,5 +183,28 @@ public class SearchService {
                 .collect(Collectors.toSet());
 
         return new FilterOptionsDTO(subjects, numbers, credits, faculty, times);
+    }
+
+
+    @Transactional
+    public CourseSectionDTO getCourseDetails(Long id) {
+        CourseSection section = courseSectionRepository.findById(id)
+                .orElseThrow(() -> new CourseSectionNotFoundException("Section not found"));
+        return new CourseSectionDTO(
+                section.getId(),
+                section.getSubject(),
+                section.getNumber(),
+                section.getName(),
+                section.getCredits(),
+                section.isLab(),
+                section.isOpen(),
+                section.getLocation(),
+                section.getSection(),
+                section.getSemester(),
+                section.getOpenSeats(),
+                section.getTotalSeats(),
+                section.getFaculty(),
+                section.getTimes()
+        );
     }
 }
