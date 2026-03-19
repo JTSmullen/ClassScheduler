@@ -47,6 +47,8 @@ const state = {
   token: getStoredAuthToken(),
   isRegistering: false,
   hasAttemptedSearch: false,
+  // This becomes true only after a keyword search succeeds.
+  // The UI uses it to reveal Steps 2 and 3 only after Step 1 has completed.
   hasCompletedSearch: false,
   userInfo: null,
   userInfoStatus: 'idle',
@@ -620,12 +622,13 @@ async function handleRemoveCourse(course) {
   }
 }
 
-// Run the initial keyword search, then refresh the available filter choices.
+// Run the initial keyword search, then unlock the later filter steps.
 // The overall flow is:
 // 1. Ask the API for search results.
-// 2. Ask the API for filter options.
-// 3. Refresh the visible result list using the current filter state.
-// 4. Re-render the page.
+// 2. Mark Step 1 as completed so Steps 2 and 3 can appear.
+// 3. Ask the API for filter options tied to that saved search.
+// 4. Refresh the visible result list using the current filter state.
+// 5. Re-render the page.
 async function handleSearch() {
   showError('');
   clearCourseActionFeedback();
@@ -659,7 +662,7 @@ async function handleSearch() {
 }
 
 // Re-run the filters against the user's current active search result.
-// This does not create a new keyword search; it narrows the saved result set for the current user.
+// This does not create a new keyword search; it narrows the saved result set created by Step 1.
 async function handleApplyFilters() {
   showError('');
 
@@ -681,7 +684,7 @@ async function handleApplyFilters() {
   }
 }
 
-// Reset the search and filter form so the user can start over quickly.
+// Reset the whole search flow so the user returns to Step 1 only.
 // Here we replace the nested searchDraft object with a brand new clean object.
 function handleClearSearchState() {
   state.hasAttemptedSearch = false;
@@ -991,8 +994,8 @@ function renderScheduleControls() {
 }
 
 // Build the search and filter panel.
-// This panel is intentionally grouped into three visual steps.
-// The API flow is still: run one keyword search first, then narrow that saved result set with filters.
+// The step summary always stays visible so the user can see the whole flow.
+// Only the Step 2 and Step 3 controls are hidden until Step 1 succeeds.
 function renderSearchPanel() {
   const panel = document.createElement('section');
   panel.className = 'panel';
