@@ -156,7 +156,17 @@ function clearApp() {
 // Since some backend responses omit the course ID, we build a lookup key from fields
 // that are usually stable together.
 function getCourseKey(course) {
-  return [course.subject, course.number, course.section, course.name].join('|');
+  return [
+    course.subject,
+    course.number,
+    course.section || '',
+    course.name,
+    course.credits ?? '',
+    safeArray(course.faculty).join(','),
+    safeArray(course.times)
+      .map((time) => [time.day, time.start_time ?? time.startTime, time.end_time ?? time.endTime].join('-'))
+      .join(','),
+  ].join('|');
 }
 
 // Read a course ID if the backend included one directly on the object.
@@ -189,13 +199,14 @@ function rememberCourseIds(courses) {
   });
 }
 
-// Remove duplicate courses from backend result lists before they are rendered.
-// Prefer the backend ID when present, otherwise fall back to the stable display key.
+// Remove duplicate search rows before they are rendered.
+// The backend can return different database rows that still look identical in the search UI
+// because the search DTO does not include fields like semester.
 function dedupeCourses(courses) {
   const seen = new Set();
 
   return safeArray(courses).filter((course) => {
-    const uniqueKey = getDirectCourseId(course) ?? getCourseKey(course);
+    const uniqueKey = getCourseKey(course);
 
     if (seen.has(uniqueKey)) {
       return false;
@@ -476,7 +487,7 @@ function renderCourseCard(course, {
 
   const title = document.createElement('h4');
   title.className = 'course-card__title';
-  title.textContent = `${course.subject} ${course.number} ${course.section ? `Section ${course.section}` : ''}`.trim();
+  title.textContent = `${course.subject} ${course.number}${course.section ? ` • Section ${course.section}` : ''}`;
   card.appendChild(title);
 
   const subtitle = document.createElement('p');
@@ -488,10 +499,12 @@ function renderCourseCard(course, {
   details.className = 'course-card__details';
   details.innerHTML = compact
     ? `
+      ${course.section ? `<div><strong>Section:</strong> ${course.section}</div>` : ''}
       <div><strong>${course.credits ?? '?'} credits</strong> • ${safeArray(course.faculty).join(', ') || 'Faculty not listed'}</div>
       <div>${formatMeetingSummary(course)}</div>
     `
     : `
+      ${course.section ? `<div><strong>Section:</strong> ${course.section}</div>` : ''}
       <div><strong>Credits:</strong> ${course.credits ?? 'Unknown'}</div>
       <div><strong>Faculty:</strong> ${safeArray(course.faculty).join(', ') || 'Not listed'}</div>
       <div><strong>When:</strong> ${formatMeetingSummary(course)}</div>
@@ -532,7 +545,7 @@ function renderCourseCard(course, {
 
 // ################## BUTTON HANDLERS ##################
 
-// Add a course through the backend after confirming a schedule is currently open.
+// Add a course through the API after confirming a schedule is currently open.
 // This function is an event handler: it runs when the user clicks an add button.
 async function handleAddCourse(course) {
   showError('');
@@ -547,7 +560,7 @@ async function handleAddCourse(course) {
   const courseId = resolveCourseId(course);
 
   if (courseId === null || courseId === undefined) {
-    setCourseActionFeedback(course, 'error', 'This course is missing an ID in the backend data, so it cannot be added safely.');
+    setCourseActionFeedback(course, 'error', 'This course is missing required data, so it cannot be added safely.');
     renderApp();
     return;
   }
@@ -560,7 +573,7 @@ async function handleAddCourse(course) {
       const removedSchedule = await removeCourse({ schedule_id: updatedSchedule.id, course_id: courseId });
       state.currentSchedule = await syncScheduleConflict(removedSchedule);
       await refreshUserInfo();
-      setCourseActionFeedback(course, 'error', 'Backend conflict check rejected this add, so the course was removed again.');
+      setCourseActionFeedback(course, 'error', 'This course conflicts with your schedule, so it was removed again.');
       renderApp();
       return;
     }
@@ -575,7 +588,7 @@ async function handleAddCourse(course) {
   }
 }
 
-// Remove a course when we have enough data to identify it on the backend.
+// Remove a course when we have enough data to identify it through the API.
 async function handleRemoveCourse(course) {
   showError('');
   clearCourseActionFeedback();
@@ -589,7 +602,7 @@ async function handleRemoveCourse(course) {
   const courseId = resolveCourseId(course);
 
   if (courseId === null || courseId === undefined) {
-    setCourseActionFeedback(course, 'error', 'This course is missing an ID, so the backend cannot remove it safely.');
+    setCourseActionFeedback(course, 'error', 'This course is missing required data, so it cannot be removed safely.');
     renderApp();
     return;
   }
@@ -606,11 +619,11 @@ async function handleRemoveCourse(course) {
   }
 }
 
-// Run the initial backend keyword search, then refresh the backend filter choices.
+// Run the initial keyword search, then refresh the available filter choices.
 // The overall flow is:
-// 1. Ask the backend for search results.
-// 2. Ask the backend for filter options.
-// 3. Refresh the visible result list using the current backend filter state.
+// 1. Ask the API for search results.
+// 2. Ask the API for filter options.
+// 3. Refresh the visible result list using the current filter state.
 // 4. Re-render the page.
 async function handleSearch() {
   showError('');
@@ -642,18 +655,18 @@ async function handleSearch() {
   }
 }
 
-// Re-run the backend filters against the user's current active search result.
-// This does not create a new keyword search; it narrows the search already stored on the backend.
+// Re-run the filters against the user's current active search result.
+// This does not create a new keyword search; it narrows the saved result set for the current user.
 async function handleApplyFilters() {
   showError('');
 
   if (state.rawSearchResults.length === 0) {
-    showError('Run the initial keyword search first, then apply backend filters to that result set.');
+    showError('Run the initial keyword search first, then apply filters to that result set.');
     return;
   }
 
   if ((state.searchDraft.startAfter || state.searchDraft.endBefore) && !DAY_ORDER.some((day) => state.searchDraft.selectedDays[day])) {
-    showError('Choose at least one day when using the backend time-range filter.');
+    showError('Choose at least one day when using the time-range filter.');
     return;
   }
 
@@ -692,7 +705,7 @@ function handleClearSearchState() {
   renderApp();
 }
 
-// Create a new schedule through the backend and immediately display it.
+// Create a new schedule through the API and immediately display it.
 // trim() removes accidental spaces from the start/end of the text input.
 async function handleCreateSchedule() {
   const scheduleName = state.pendingScheduleName.trim();
@@ -716,7 +729,7 @@ async function handleCreateSchedule() {
   }
 }
 
-// Load an existing schedule from the backend using the schedule selected by name.
+// Load an existing schedule through the API using the schedule selected by name.
 async function handleLoadSchedule() {
   const scheduleId = Number(state.selectedScheduleId);
 
@@ -973,8 +986,8 @@ function renderScheduleControls() {
 }
 
 // Build the search and filter panel.
-// This panel is intentionally split into two steps because the backend API is also a two-step flow:
-// first a plain-text search, then filters applied to that stored search result.
+// This panel is intentionally grouped into three visual steps.
+// The API flow is still: run one keyword search first, then narrow that saved result set with filters.
 function renderSearchPanel() {
   const panel = document.createElement('section');
   panel.className = 'panel';
@@ -986,7 +999,7 @@ function renderSearchPanel() {
 
   const intro = document.createElement('p');
   intro.className = 'panel__copy';
-  intro.textContent = 'Step 1: run an initial backend keyword search. Step 2: run backend filters against that search result.';
+  intro.innerHTML = 'Step 1: search by keyword.<br>Step 2: narrow by course details.<br>Step 3: narrow by meeting time.(optional)';
   panel.appendChild(intro);
 
   const searchGrid = document.createElement('div');
@@ -1009,7 +1022,7 @@ function renderSearchPanel() {
 
   const stepTwoLabel = document.createElement('div');
   stepTwoLabel.className = 'field field--full-width';
-  stepTwoLabel.innerHTML = '<span class="field__label">Step 2: Backend filters for the current search result</span>';
+  stepTwoLabel.innerHTML = '<span class="field__label">Step 2: Course filters</span>';
   searchGrid.appendChild(stepTwoLabel);
 
   searchGrid.appendChild(buildLabeledSelect({
@@ -1051,6 +1064,16 @@ function renderSearchPanel() {
       state.searchDraft.selectedFaculty = value;
     },
   }));
+
+  const stepThreeLabel = document.createElement('div');
+  stepThreeLabel.className = 'field field--full-width';
+  stepThreeLabel.innerHTML = '<span class="field__label">Step 3: Time filters</span>';
+  searchGrid.appendChild(stepThreeLabel);
+
+  const timeHelp = document.createElement('div');
+  timeHelp.className = 'field field--full-width';
+  timeHelp.innerHTML = '<span class="field__label">Choose at least one day. Matches classes fully inside the time range.</span>';
+  searchGrid.appendChild(timeHelp);
 
   searchGrid.appendChild(buildLabeledInput({
     label: 'Classes starting after',
@@ -1097,7 +1120,7 @@ function renderSearchPanel() {
 
   const applyFiltersButton = document.createElement('button');
   applyFiltersButton.className = 'button button--secondary';
-  applyFiltersButton.textContent = 'Apply backend filters';
+  applyFiltersButton.textContent = 'Apply filters';
   applyFiltersButton.addEventListener('click', handleApplyFilters);
   actions.appendChild(applyFiltersButton);
 
@@ -1113,7 +1136,7 @@ function renderSearchPanel() {
 }
 
 // Render the current search results list.
-// If a search has been attempted but no results match the current backend search/filter state,
+// If a search has been attempted but no results match the current search/filter state,
 // we show an empty-state message.
 function renderResultsPanel() {
   const panel = document.createElement('section');
@@ -1126,7 +1149,7 @@ function renderResultsPanel() {
 
   const copy = document.createElement('p');
   copy.className = 'panel__copy';
-  copy.textContent = 'Results stay inside this bubble-style scroll area so the search controls and calendar remain visible.';
+  copy.textContent = 'Results from the search are shown here. Add courses to your schedule right from this list.';
   panel.appendChild(copy);
 
   const results = state.hasAttemptedSearch ? state.visibleSearchResults : [];
@@ -1210,7 +1233,7 @@ function renderCalendarPanel() {
   const copy = document.createElement('p');
   copy.className = 'panel__copy';
   copy.textContent = state.currentSchedule
-    ? 'The calendar always shows the full week so gaps between classes stay visible.'
+    ? 'Your current schedule is visualized here.'
     : 'Load or create a schedule to start filling the weekly calendar.';
   panel.appendChild(copy);
 
@@ -1253,6 +1276,15 @@ function renderCalendarPanel() {
   for (let minute = CALENDAR_START_MINUTES; minute <= CALENDAR_END_MINUTES; minute += 60) {
     const label = document.createElement('div');
     label.className = 'calendar-week__time-label';
+
+    if (minute === CALENDAR_START_MINUTES) {
+      label.classList.add('calendar-week__time-label--start');
+    }
+
+    if (minute === CALENDAR_END_MINUTES) {
+      label.classList.add('calendar-week__time-label--end');
+    }
+
     label.style.top = `${((minute - CALENDAR_START_MINUTES) / (CALENDAR_END_MINUTES - CALENDAR_START_MINUTES)) * 100}%`;
     label.textContent = formatMinutesLabel(minute);
     timeRail.appendChild(label);
@@ -1284,7 +1316,7 @@ function renderCalendarPanel() {
           card.style.top = `${topPercent}%`;
           card.style.height = `${Math.max(heightPercent, 4)}%`;
           card.innerHTML = `
-            <strong>${course.subject} ${course.number}</strong>
+            <strong>${course.subject} ${course.number}${course.section ? ` • ${course.section}` : ''}</strong>
             <span>${course.name}</span>
             <span>${formatMinutesLabel(meeting.start)}-${formatMinutesLabel(meeting.end)}</span>
           `;

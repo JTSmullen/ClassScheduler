@@ -141,6 +141,7 @@ body {
   min-height: 0;
   display: grid;
   grid-template-rows: auto auto 1fr;
+  overflow: hidden;
 }
 
 /* Give the calendar panel a little extra padding. */
@@ -314,6 +315,8 @@ body {
 
 .course-list--scrollable {
   gap: 10px;
+  height: min(46vh, 520px);
+  max-height: min(46vh, 520px);
 }
 
 .course-list--scrollable-small {
@@ -463,6 +466,15 @@ body {
   color: var(--text-muted);
 }
 
+/* Keep the first and last labels fully inside the calendar instead of centering them over the edge. */
+.calendar-week__time-label--start {
+  transform: translateY(0);
+}
+
+.calendar-week__time-label--end {
+  transform: translateY(-100%);
+}
+
 /* Each day column becomes a positioning surface for course blocks. */
 /* Because this column is relative, event cards inside it can be absolutely positioned. */
 .calendar-week__day-column {
@@ -530,6 +542,11 @@ body {
   .course-list--scrollable,
   .course-list--scrollable-small {
     max-height: none;
+  }
+
+  .course-list--scrollable {
+    height: min(42vh, 420px);
+    max-height: min(42vh, 420px);
   }
 }
 
