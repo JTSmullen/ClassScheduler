@@ -1,3 +1,5 @@
+// ################## SHARED API REQUEST HELPERS ##################
+
 // Keep the backend base URL in one place so changing environments stays simple.
 // If your backend port changes later, this is one of the main lines you would update.
 const baseUrl = 'http://localhost:8080/api/v1';
@@ -114,16 +116,25 @@ function getJson(path) {
   return request(path, { method: 'GET' });
 }
 
+// ################## CALLS TO AUTH BACKEND ##################
+
 // Authenticate an existing user and receive a JWT token.
 // JWT stands for JSON Web Token, which is the login credential the backend returns.
 export function login(data) {
   return postJson('/auth/login', data);
 }
 
+// Load the currently logged-in user's profile and saved schedule list.
+export function getCurrentUser() {
+  return getJson('/user');
+}
+
 // Create a new user account.
 export function register(data) {
   return postJson('/auth/register', data);
 }
+
+// ################## CALLS TO USER AND SCHEDULE BACKEND ##################
 
 // Ask the backend to create a new schedule for the current user.
 export function createSchedule(data) {
@@ -144,6 +155,13 @@ export function addCourse(data) {
 export function removeCourse(data) {
   return postJson('/schedule/remove', data);
 }
+
+// Ask the backend to recompute the conflict flag for one schedule.
+export function checkScheduleConflict(data) {
+  return postJson('/schedule/check', data);
+}
+
+// ################## CALLS TO SEARCH BACKEND ##################
 
 // Run the backend keyword search against available courses.
 export function searchCourses(query) {
