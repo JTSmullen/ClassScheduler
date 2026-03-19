@@ -908,7 +908,7 @@ function renderScheduleControls() {
   const summary = document.createElement('p');
   summary.className = 'panel__copy';
   summary.textContent = state.currentSchedule
-    ? `Current schedule: ${state.currentSchedule.name} (ID ${state.currentSchedule.id})`
+    ? `Current schedule: ${state.currentSchedule.name}`
     : 'Create a new schedule or pick one of your saved schedules by name.';
   panel.appendChild(summary);
 
