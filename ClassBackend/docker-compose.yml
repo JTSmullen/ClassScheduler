@@ -37,7 +37,7 @@ services:
       - SPRING_DATASOURCE_USERNAME=admin
 
       # !!! REPLACE THIS WITH YOUR REAL RDS PASSWORD !!!
-      - SPRING_DATASOURCE_PASSWORD=Starwars1-9.
+      - SPRING_DATASOURCE_PASSWORD=
 
       # These tell Hibernate how to behave.
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
