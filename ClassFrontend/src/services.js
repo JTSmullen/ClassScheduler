@@ -2,7 +2,7 @@
 
 // Keep the backend base URL in one place so changing environments stays simple.
 // If your backend port changes later, this is one of the main lines you would update.
-const baseUrl = 'http://localhost:8080/api/v1';
+const baseUrl = 'https://lfrgiy6ixwc3psnimphcam4npa0rxxbq.lambda-url.us-east-2.on.aws/api/v1';
 
 // Store the JWT under a stable key so refreshes keep the user signed in.
 // localStorage is the browser's built-in small key/value store.
