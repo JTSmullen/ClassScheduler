@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  # 1. THE LOCAL DATABASE CONTAINER
+  # We still need this defined because of "depends_on", but our app will ignore it.
+  mysqldb:
+    image: mysql:8.0
+    container_name: scheduler-mysql
+    ports:
+      # If you had a port conflict before, keep this at 3307:3306
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: class_scheduler
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_USER: scheduler_user
+      MYSQL_PASSWORD: scheduler_password
+    volumes:
+      - db_data:/var/lib/mysql
+
+  # 2. YOUR SPRING BOOT APP CONTAINER
+  app:
+    build: .
+    container_name: scheduler-app
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mysqldb
+    restart: on-failure
+    environment:
+      # --- AWS RDS DATABASE SETTINGS ---
+      # Spring Boot will use these variables to connect to your LIVE AWS database.
+
+      # Paste your RDS endpoint URL here. I've added the /class_scheduler database name for you.
+      - SPRING_DATASOURCE_URL=jdbc:mysql://class-schduler-db.cpi4uo8o86gy.us-east-2.rds.amazonaws.com:3306/class_scheduler?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+
+      # Replace 'admin' with the Master Username you chose in RDS.
+      - SPRING_DATASOURCE_USERNAME=admin
+
+      # !!! REPLACE THIS WITH YOUR REAL RDS PASSWORD !!!
+      - SPRING_DATASOURCE_PASSWORD=Starwars1-9.
+
+      # These tell Hibernate how to behave.
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - SPRING_JPA_DATABASE_PLATFORM=org.hibernate.dialect.MySQLDialect
+
+# This volume saves the data for the local mysqldb container if you ever use it again.
+volumes:
+  db_data:
