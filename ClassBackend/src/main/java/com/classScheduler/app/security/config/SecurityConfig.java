@@ -86,7 +86,7 @@ public class SecurityConfig {
                 "http://127.0.0.1:63342",
                 "http://127.0.0.1:3000",
                 "http://127.0.0.1:5500",
-                "https://lfrgiy6ixwc3psnimphcam4npa0rxxbq.lambda-url.us-east-2.on.aws"
+                "https://main.d2lnb6qcxminz1.amplifyapp.com"
         ));
 
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
