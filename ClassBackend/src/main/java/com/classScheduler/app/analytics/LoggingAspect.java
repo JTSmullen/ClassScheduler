@@ -1,13 +1,23 @@
 package com.classScheduler.app.analytics;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.springframework.stereotype.Component;
 
+import java.util.concurrent.TimeUnit;
+
 @Aspect
 @Component
 public class LoggingAspect {
+
+    private final MeterRegistry registry;
+
+    public LoggingAspect(MeterRegistry registry){
+        this.registry = registry;
+    }
 
     @Around("@annotation(org.springframework.web.bind.annotation.GetMapping) || " +
             "@annotation(org.springframework.web.bind.annotation.PostMapping) || " +
@@ -15,15 +25,21 @@ public class LoggingAspect {
             "@annotation(org.springframework.web.bind.annotation.DeleteMapping)")
     public Object logTime(ProceedingJoinPoint joinPoint) throws Throwable {
 
-        long start = System.currentTimeMillis();
-        Object result = joinPoint.proceed();
+        String methodName = joinPoint.getSignature().getName();
 
-        long duration = System.currentTimeMillis() - start;
+        Timer timer = Timer.builder("http.request.duration")
+                .tag("method", methodName)
+                .description("Time taken for API Requests")
+                .register(registry);
 
-        System.out.println("Method " + joinPoint.getSignature().getName() + " took " + duration + "ms");
+        long start = System.nanoTime();
 
-        return result;
-
+        try {
+            return joinPoint.proceed();
+        } finally {
+            long duration = System.nanoTime() - start;
+            timer.record(duration, TimeUnit.NANOSECONDS);
+        }
     }
 
 }
