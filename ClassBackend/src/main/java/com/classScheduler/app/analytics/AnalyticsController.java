@@ -1,7 +1,6 @@
 package com.classScheduler.app.analytics;
 
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Timer;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -20,18 +19,16 @@ public class AnalyticsController {
         this.registry = registry;
     }
 
-    // Helper class for clean JSON output
     public record MethodStat(String method, long calls, double avgMs, double maxMs) {}
 
     @GetMapping("/stats")
     public List<MethodStat> getStats() {
-        // Look for all timers named "http.request.duration"
         return registry.find("http.request.duration").timers().stream()
                 .map(timer -> new MethodStat(
-                        timer.getId().getTag("method"),  // Get the name from our Tag
-                        timer.count(),                   // Total calls
-                        timer.mean(TimeUnit.MILLISECONDS), // Avg time in ms
-                        timer.max(TimeUnit.MILLISECONDS)   // Max time in ms
+                        timer.getId().getTag("method"),
+                        timer.count(),
+                        timer.mean(TimeUnit.MILLISECONDS),
+                        timer.max(TimeUnit.MILLISECONDS)
                 ))
                 .collect(Collectors.toList());
     }
