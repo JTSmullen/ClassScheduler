@@ -272,3 +272,30 @@ foreach ($idToDelete in $capturedIds) {
         }
     }
 }
+
+# ==========================================
+# 8. FETCH PERFORMANCE ANALYTICS
+# ==========================================
+$analyticsUrl = "http://localhost:8080/api/v1/analytics/stats"
+
+Write-Host "`n--- 8. API PERFORMANCE DASHBOARD ---" -ForegroundColor Cyan
+
+try {
+    # One single call to get all method stats
+    $stats = Invoke-RestMethod -Uri $analyticsUrl -Method Get -Headers $headers
+
+    if ($stats.Count -eq 0) {
+        Write-Host "No data recorded yet. Hit some endpoints first!" -ForegroundColor Yellow
+    } else {
+        Write-Host ("{0,-25} | {1,-8} | {2,-12} | {3,-10}" -f "Method Name", "Calls", "Avg (ms)", "Max (ms)") -ForegroundColor Cyan
+        Write-Host ("-" * 65) -ForegroundColor Cyan
+
+        foreach ($s in $stats) {
+            Write-Host ("{0,-25} | {1,-8} | {2,10:N2} ms | {3,8:N2} ms" -f $s.method, $s.calls, $s.avgMs, $s.maxMs) -ForegroundColor White
+        }
+    }
+}
+catch {
+    Write-Host " FAILED to fetch analytics." -ForegroundColor Red
+    Write-Host " Error: $($_.Exception.Message)"
+}
