@@ -71,6 +71,7 @@ public class SearchService {
         // make SearchItemDTO. Less items to avoid sending too much data to frontend. Will be able to look at individual classes to get more info. Will be done by getting from database entry.
         List<SearchItemDTO> resultsDTO = results.stream()
                 .map(result -> new SearchItemDTO(
+
                         result.getSubject(),
                         result.getNumber(),
                         result.getName(),
