@@ -219,20 +219,4 @@ public class ScheduleService {
 
     }
 
-    /**
-     * Saves a users schedule
-     *
-     * @param schedule the current schedule the user is on to save
-     * @return boolean for successful save or not, boolean response will be sent to frontend
-     *         via DTO
-     */
-    @Transactional
-    public boolean saveSchedule(Schedule schedule) {
-        try {
-            scheduleRepo.save(schedule);
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
-    }
 }

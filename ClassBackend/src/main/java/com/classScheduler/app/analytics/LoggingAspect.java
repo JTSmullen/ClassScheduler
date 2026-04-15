@@ -29,7 +29,6 @@ public class LoggingAspect {
 
         Timer timer = Timer.builder("http.request.duration")
                 .tag("method", methodName)
-                .description("Time taken for API Requests")
                 .register(registry);
 
         long start = System.nanoTime();
