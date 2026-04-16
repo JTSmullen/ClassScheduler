@@ -65,6 +65,8 @@ public class SecurityConfig {
                         ).permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/error").permitAll()
+                        .requestMatchers("/actuator/**").permitAll()
+                        .requestMatchers("/api/v1/analytics/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .headers(headers -> headers.frameOptions(frame -> frame.disable()));
@@ -85,7 +87,8 @@ public class SecurityConfig {
                 "http://localhost:5500",
                 "http://127.0.0.1:63342",
                 "http://127.0.0.1:3000",
-                "http://127.0.0.1:5500"
+                "http://127.0.0.1:5500",
+                "https://main.d2lnb6qcxminz1.amplifyapp.com"
         ));
 
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));

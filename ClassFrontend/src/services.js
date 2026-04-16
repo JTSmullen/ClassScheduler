@@ -2,6 +2,16 @@
 
 // Keep the backend base URL in one place so changing environments stays simple.
 // If your backend port changes later, this is one of the main lines you would update.
+
+
+/*
+    The first URL calls the lambda function on the backend, this will only work from an approved port and not locally.
+
+    For Local testing use 'const baseUrl = localhost' one
+
+    AWS will detect any change to the frontend and automatically rebuild it, so must have the AWS one uncommented when merged into main
+*/
+//const baseUrl = 'https://lfrgiy6ixwc3psnimphcam4npa0rxxbq.lambda-url.us-east-2.on.aws/api/v1';
 const baseUrl = 'http://localhost:8080/api/v1';
 
 // Store the JWT under a stable key so refreshes keep the user signed in.
