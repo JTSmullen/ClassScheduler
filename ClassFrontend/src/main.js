@@ -89,18 +89,6 @@ if (state.token) {
   setAuthToken(state.token);
 }
 
-// TODO (MVP work for you, about 4.0 hours total):
-// 1. 1.5h: Expand the backend search endpoint so users can begin with structured search inputs instead of needing an initial keyword search first.
-// 2. 1.0h: Add backend support for availability / open-seat filtering if your team wants that in the MVP.
-// 3. 0.75h: Enforce conflict rejection on the backend's add-course endpoint so conflicting classes cannot be added from any client.
-// 4. 0.75h: Manually test the full MVP flow and tighten edge-case messages based on what you observe in the browser.
-
-// TODO (post-MVP, do not count toward the 4.0 hours above):
-// 1. Migrate this UI to React components once the API contract is stable.
-// 2. Add a richer structured backend search endpoint so users can start from filters instead of a keyword-first flow.
-// 3. Add multi-schedule switching and comparison once the team agrees on UX.
-// 4. Add drag-to-resize or drag-to-reorder interactions in the calendar.
-
 // Return a safe array so the UI never crashes on null or undefined collections.
 // Backend data is not always guaranteed to be present, so this works like a defensive helper.
 function safeArray(value) {
@@ -686,7 +674,7 @@ async function handleApplyFilters() {
 
 // Reset the whole search flow so the user returns to Step 1 only.
 // Here we replace the nested searchDraft object with a brand new clean object.
-function handleClearSearchState() {
+function x () {
   state.hasAttemptedSearch = false;
   state.hasCompletedSearch = false;
   state.rawSearchResults = [];
