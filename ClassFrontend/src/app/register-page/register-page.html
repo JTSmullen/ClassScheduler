@@ -1,0 +1,108 @@
+<div class="register-page">
+  <div class="register-shell">
+    <div class="brand-bar">
+      <lucide-icon [img]="Calendar" class="brand-icon"></lucide-icon>
+      <span class="brand-name">ClassScheduler</span>
+    </div>
+
+    <div class="register-card">
+      <div class="card-header">
+        <h1>Create an Account</h1>
+        <p>Get started with ClassScheduler and organize your classes.</p>
+      </div>
+
+      <form (submit)="handleRegister($event)" class="register-form">
+        <div class="name-row">
+          <div class="field-group">
+            <label for="firstName">First Name</label>
+            <input
+              id="firstName"
+              type="text"
+              class="input-field"
+              placeholder="John"
+              [value]="firstName"
+              (input)="firstName = $any($event.target).value"
+              required
+            />
+          </div>
+
+          <div class="field-group">
+            <label for="lastName">Last Name</label>
+            <input
+              id="lastName"
+              type="text"
+              class="input-field"
+              placeholder="Doe"
+              [value]="lastName"
+              (input)="lastName = $any($event.target).value"
+              required
+            />
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label for="username">Username</label>
+          <input
+            id="username"
+            type="text"
+            class="input-field"
+            placeholder="your username"
+            [value]="username"
+            (input)="username = $any($event.target).value"
+            required
+          />
+        </div>
+
+        <div class="field-group">
+          <label for="email">Email</label>
+          <input
+            id="email"
+            type="email"
+            class="input-field"
+            placeholder="you@school.edu"
+            [value]="email"
+            (input)="email = $any($event.target).value"
+            required
+          />
+        </div>
+
+        <div class="field-group">
+          <label for="password">Password</label>
+          <input
+            id="password"
+            type="password"
+            class="input-field"
+            [value]="password"
+            (input)="password = $any($event.target).value"
+            required
+          />
+        </div>
+
+        <div class="field-group">
+          <label for="confirmPassword">Confirm Password</label>
+          <input
+            id="confirmPassword"
+            type="password"
+            class="input-field"
+            [value]="confirmPassword"
+            (input)="confirmPassword = $any($event.target).value"
+            required
+          />
+        </div>
+
+        <div class="error-message" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+        <button type="submit" class="btn btn-primary btn-full" [disabled]="loading">
+          {{ loading ? 'Creating account...' : 'Create Account' }}
+        </button>
+      </form>
+
+      <p class="signup-text">
+        Already have an account?
+        <a routerLink="/login" class="link">Sign in</a>
+      </p>
+    </div>
+
+    <a routerLink="/" class="btn btn-ghost btn-full">← Back to Home</a>
+  </div>
+</div>
