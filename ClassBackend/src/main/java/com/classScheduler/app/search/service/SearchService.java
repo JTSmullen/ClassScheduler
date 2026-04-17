@@ -39,6 +39,16 @@ public class SearchService {
 
     @Transactional
     public List<SearchItemDTO> searchAndFilter(SearchFilterDTO filter) {
+        Set<String> keywordSet = Optional.ofNullable(filter.getKeyword())
+                .orElse("")
+                .trim()
+                .isEmpty()
+                ? new HashSet<>()
+                : Arrays.stream(filter.getKeyword().trim().split("\\s+"))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toSet());
+
         // get current user that we have cached and then findById to get current User entity in case changes made since cached.
         User cachedUser = securityUtil.getCurrentUser().orElseThrow();
         User user = userRepository.findById(cachedUser.getId()).orElseThrow();
@@ -50,12 +60,12 @@ public class SearchService {
             user.setSearch(search);
             search.setUser(user);
             // Apply filters to all results when no keyword is provided
-            if (filter.getKeywords().isEmpty()) {
+            if (keywordSet.isEmpty()) {
                 Set<CourseSection> results = new HashSet<>(courseSectionRepository.findAll());
                 Set<CourseSection> uniqueResults = uniqueResults(results);
                 Set<CourseSection> filteredResults = applyFilter(uniqueResults, filter);
                 search.setResults(uniqueResults);
-                search.setKeywords(filter.getKeywords());
+                search.setKeywords(keywordSet);
                 searchRepository.save(search);
                 userRepository.save(user);
                 return buildSearchResultsDTO(filteredResults);
@@ -63,13 +73,13 @@ public class SearchService {
             else {
                 Set<CourseSection> results = new HashSet<>();
                 // get resulting classes for keywords
-                for (String keyword : filter.getKeywords()) {
+                for (String keyword : keywordSet) {
                     results.addAll(courseSectionRepository.searchByKeyword(keyword));
                 }
                 Set<CourseSection> uniqueResults = uniqueResults(results);
                 Set<CourseSection> filteredResults = applyFilter(uniqueResults, filter);
                 search.setResults(uniqueResults);
-                search.setKeywords(filter.getKeywords());
+                search.setKeywords(keywordSet);
                 searchRepository.save(search);
                 userRepository.save(user);
                 return buildSearchResultsDTO(filteredResults);
@@ -79,12 +89,12 @@ public class SearchService {
         else {
             Search oldSearch = user.getSearch();
             // ensure that no extra database call is made if the keyword has not changed
-            if (Objects.equals(oldSearch.getKeywords(), filter.getKeywords())) {
+            if (Objects.equals(oldSearch.getKeywords(), keywordSet)) {
                 Search search = user.getSearch();
                 Set<CourseSection> results = search.getResults();
                 Set<CourseSection> filteredResults = applyFilter(results, filter);
                 // Results stay the same so no need to save them to the search
-                search.setKeywords(filter.getKeywords());
+                search.setKeywords(keywordSet);
                 searchRepository.save(search);
                 userRepository.save(user);
                 return buildSearchResultsDTO(filteredResults);
@@ -105,13 +115,13 @@ public class SearchService {
 
                 Set<CourseSection> results = new HashSet<>();
                 // get resulting classes for keywords
-                for (String keyword : filter.getKeywords()) {
+                for (String keyword : keywordSet) {
                     results.addAll(courseSectionRepository.searchByKeyword(keyword));
                 }
                 Set<CourseSection> uniqueResults = uniqueResults(results);
                 Set<CourseSection> filteredResults = applyFilter(uniqueResults, filter);
                 search.setResults(uniqueResults);
-                search.setKeywords(filter.getKeywords());
+                search.setKeywords(keywordSet);
                 searchRepository.save(search);
                 userRepository.save(user);
                 return buildSearchResultsDTO(filteredResults);
@@ -121,7 +131,7 @@ public class SearchService {
     }
 
     // Helper method to apply filter to broader search results
-    public Set<CourseSection> applyFilter(Set<CourseSection> results, SearchFilterDTO filter) {
+    private Set<CourseSection> applyFilter(Set<CourseSection> results, SearchFilterDTO filter) {
         // filter user's search results by filter
         List<CourseSection> filtered = results.stream()
                 .filter(c -> filter.getSubjects() == null || filter.getSubjects().isEmpty()
@@ -153,7 +163,7 @@ public class SearchService {
     }
 
     // helper method to build SearchI
-    public List<SearchItemDTO> buildSearchResultsDTO(Set<CourseSection> results) {
+    private List<SearchItemDTO> buildSearchResultsDTO(Set<CourseSection> results) {
         List<SearchItemDTO> resultsDTO = results.stream()
                 .map(result -> new SearchItemDTO(
                         result.getSubject(),
@@ -171,7 +181,7 @@ public class SearchService {
     }
 
     // Helper method to remove duplicate results included in db
-    public Set<CourseSection> uniqueResults(Set<CourseSection> results) {
+    private Set<CourseSection> uniqueResults(Set<CourseSection> results) {
         // explicitly remove duplicate course sections since it seems like there are some duplicates in db
         Set<CourseSection> uniqueResults = new HashSet<>(results.stream()
                 .collect(Collectors.toMap(

@@ -10,7 +10,7 @@ import java.util.Set;
 @Getter
 @Setter
 public class SearchFilterDTO {
-    private Set<String> keywords;
+    private String keyword;
     private Set<String> subjects;
     private Set<Integer> numbers;
     private Set<Integer> credits;

@@ -25,20 +25,10 @@ public class SearchController {
         this.searchService = searchService;
     }
 
-    @PostMapping
-    // @RequestBody used when data is sent as JSON in the request body
-    public ResponseEntity<List<SearchItemDTO>> search(@Valid @RequestBody String query) {
-
-        Set<String> keywords = new HashSet<>(Arrays.asList(query.trim().split("\\s+")));
-
-        return ResponseEntity.ok(searchService.search(keywords));
-    }
-
-
     @PostMapping("/filter")
-    public ResponseEntity<List<SearchItemDTO>> filter(@Valid @RequestBody SearchFilterDTO filter) {
-
-        return ResponseEntity.ok(searchService.filterResults(filter));
+    // @RequestBody used when data is sent as JSON in the request body
+    public ResponseEntity<List<SearchItemDTO>> searchAndFilter(@Valid @RequestBody SearchFilterDTO filters) {
+        return ResponseEntity.ok(searchService.searchAndFilter(filters));
     }
 
     @GetMapping("/filter/options")
