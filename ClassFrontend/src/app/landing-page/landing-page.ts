@@ -7,7 +7,7 @@ import { LucideAngularModule, Calendar, Search, BookOpen } from 'lucide-angular'
   standalone: true,
   imports: [RouterLink, LucideAngularModule],
   templateUrl: './landing-page.html',
-  styleUrls: ['./landing-page.sass'] // Using CSS now
+  styleUrls: ['./landing-page.sass']
 })
 export class LandingPage {
   readonly Calendar = Calendar;
