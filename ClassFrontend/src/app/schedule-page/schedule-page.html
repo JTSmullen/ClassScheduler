@@ -1,0 +1,274 @@
+<div class="schedule-page">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-content">
+      <div class="title-section">
+        <h1>Weekly Schedule</h1>
+        <div *ngIf="!compareMode()">
+          <select
+            [value]="selectedScheduleId()"
+            (change)="onScheduleChange($event)"
+            class="schedule-selector"
+          >
+            <option *ngFor="let schedule of availableSchedules" [value]="schedule.id">
+              {{ schedule.name }}
+            </option>
+          </select>
+        </div>
+      </div>
+      <div class="controls">
+        <button
+          [class]="compareMode() ? 'btn btn-primary' : 'btn btn-outline'"
+          (click)="toggleCompareMode()"
+        >
+          <lucide-icon [img]="ArrowLeftRight" class="w-4 h-4"></lucide-icon>
+          Compare
+        </button>
+        <button
+          class="btn btn-outline"
+          (click)="openSheet()"
+        >
+          <lucide-icon [img]="Search" class="w-4 h-4"></lucide-icon>
+          Search
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Compare Mode Selectors -->
+  <div *ngIf="compareMode()" class="compare-section">
+    <div class="compare-controls">
+      <span class="compare-label">Compare:</span>
+      <div class="schedule-selectors">
+        <select
+          [value]="compareScheduleIds()[0]"
+          (change)="onCompareSchedule1Change($event)"
+          class="selector"
+        >
+          <option *ngFor="let schedule of availableSchedules" [value]="schedule.id">
+            {{ schedule.name }}
+          </option>
+        </select>
+        <span class="vs-text">vs</span>
+        <select
+          [value]="compareScheduleIds()[1]"
+          (change)="onCompareSchedule2Change($event)"
+          class="selector"
+        >
+          <option *ngFor="let schedule of availableSchedules" [value]="schedule.id">
+            {{ schedule.name }}
+          </option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Schedule Content -->
+  <div class="content" [class]="compareMode() ? 'compare-mode' : 'single-mode'">
+    <ng-container *ngIf="compareMode()">
+      <app-week-grid class="compare-panel" [events]="compareSchedule1().events" [title]="compareSchedule1().name" (courseSelected)="selectCourse($event)"></app-week-grid>
+      <div class="divider"></div>
+      <app-week-grid class="compare-panel" [events]="compareSchedule2().events" [title]="compareSchedule2().name" (courseSelected)="selectCourse($event)"></app-week-grid>
+    </ng-container>
+    <div *ngIf="!compareMode()" class="single-panel">
+      <app-week-grid [events]="currentSchedule().events" (courseSelected)="selectCourse($event)"></app-week-grid>
+    </div>
+  </div>
+
+  <!-- Search Sheet -->
+  <div *ngIf="sheetOpen()" class="search-panel">
+    <div class="panel-content">
+      <div class="panel-header">
+        <h2>Search Classes</h2>
+        <button
+          class="close-btn"
+          (click)="closeSheet()"
+        >
+          <lucide-icon [img]="X"></lucide-icon>
+        </button>
+      </div>
+      <div class="panel-body">
+        <div class="search-input">
+          <lucide-icon [img]="Search" class="search-icon"></lucide-icon>
+          <input
+            type="text"
+            placeholder="Search by title, category, or location..."
+            [value]="searchQuery()"
+            (input)="searchQuery.set($event.target.value)"
+          />
+          <button
+            *ngIf="searchQuery()"
+            (click)="clearSearch()"
+            class="clear-btn"
+          >
+            <lucide-icon [img]="X"></lucide-icon>
+          </button>
+        </div>
+        <div class="results-info">
+          {{ filteredEvents().length }} {{ filteredEvents().length === 1 ? 'result' : 'results' }}
+        </div>
+        <div class="results-list">
+          <div
+            *ngFor="let event of filteredEvents()"
+            class="result-item"
+            (click)="selectCourse(event.courseSection); closeSheet()"
+          >
+            <div class="result-content">
+              <div class="color-indicator" [style.background-color]="event.color"></div>
+              <div class="result-details">
+                <div class="course-title">
+                  {{ event.courseSection.subject }} {{ event.courseSection.number }}
+                </div>
+                <div class="course-name">{{ event.courseSection.name }}</div>
+                <div class="course-meta">
+                  <div class="meta-item">{{ DAYS[event.day] }} at {{ formatHour(event.startHour) }}
+                    <span *ngIf="event.startMinute > 0">:{{
+                      event.startMinute.toString().padStart(2, '0')
+                    }}</span>
+                  </div>
+                  <div class="meta-item location">{{ event.courseSection.location }}</div>
+                </div>
+              </div>
+              <span class="credits-badge">
+                {{ event.courseSection.credits }} CR
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Course Details Dialog -->
+  <div *ngIf="selectedCourse()" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <div class="bg-white rounded-lg max-w-2xl max-h-[90vh] overflow-y-auto w-full mx-4">
+      <div class="p-6">
+        <h2 class="text-2xl font-bold mb-4">
+          {{ selectedCourse()!.subject }} {{ selectedCourse()!.number }}: {{ selectedCourse()!.name }}
+        </h2>
+
+        <div class="space-y-4">
+          <!-- Course Info Grid -->
+          <div class="grid grid-cols-2 gap-4">
+            <div class="space-y-1">
+              <div class="flex items-center gap-2 text-sm text-gray-500">
+                <lucide-icon [img]="BookOpen" class="w-4 h-4"></lucide-icon>
+                <span>Section</span>
+              </div>
+              <div class="font-medium">{{ selectedCourse()!.section }}</div>
+            </div>
+
+            <div class="space-y-1">
+              <div class="flex items-center gap-2 text-sm text-gray-500">
+                <lucide-icon [img]="Calendar" class="w-4 h-4"></lucide-icon>
+                <span>Semester</span>
+              </div>
+              <div class="font-medium">{{ selectedCourse()!.semester }}</div>
+            </div>
+
+            <div class="space-y-1">
+              <div class="flex items-center gap-2 text-sm text-gray-500">
+                <lucide-icon [img]="MapPin" class="w-4 h-4"></lucide-icon>
+                <span>Location</span>
+              </div>
+              <div class="font-medium">{{ selectedCourse()!.location }}</div>
+            </div>
+
+            <div class="space-y-1">
+              <div class="flex items-center gap-2 text-sm text-gray-500">
+                <lucide-icon [img]="BookOpen" class="w-4 h-4"></lucide-icon>
+                <span>Credits</span>
+              </div>
+              <div class="font-medium">{{ selectedCourse()!.credits }}</div>
+            </div>
+          </div>
+
+          <hr class="border-gray-200" />
+
+          <!-- Faculty -->
+          <div class="space-y-2">
+            <div class="flex items-center gap-2 text-sm text-gray-500">
+              <lucide-icon [img]="User" class="w-4 h-4"></lucide-icon>
+              <span>Faculty</span>
+            </div>
+            <div class="space-y-1">
+              <div *ngFor="let faculty of selectedCourse()!.faculty" class="font-medium">
+                {{ faculty }}
+              </div>
+            </div>
+          </div>
+
+          <hr class="border-gray-200" />
+
+          <!-- Meeting Times -->
+          <div class="times-section">
+            <div class="section-label">
+              <lucide-icon [img]="Clock" class="icon"></lucide-icon>
+              <span>Meeting Times</span>
+            </div>
+            <div class="times-list">
+              <div *ngFor="let time of selectedCourse()!.times" class="time-item">
+                <div class="time-day">{{ time.day }}</div>
+                <div class="time-details">
+                  {{ formatHour(time.start_time.hour) }}
+                  <span *ngIf="time.start_time.minute > 0">:{{
+                    time.start_time.minute.toString().padStart(2, '0')
+                  }}</span>
+                  - {{ formatHour(time.end_time.hour) }}
+                  <span *ngIf="time.end_time.minute > 0">:{{
+                    time.end_time.minute.toString().padStart(2, '0')
+                  }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <hr class="border-gray-200" />
+
+          <!-- Enrollment -->
+          <div class="enrollment-section">
+            <div class="section-label">
+              <lucide-icon [img]="Users" class="icon"></lucide-icon>
+              <span>Enrollment</span>
+            </div>
+            <div class="enrollment-info">
+              <div class="enrollment-stats">
+                <span class="stat-label">Available Seats</span>
+                <span class="stat-value">
+                  {{ selectedCourse()!.open_seats }} / {{ selectedCourse()!.total_seats }}
+                </span>
+              </div>
+              <div class="progress-bar">
+                <div
+                  class="progress-fill"
+                  [class]="selectedCourse()!.open_seats > 0 ? 'available' : 'full'"
+                  [style.width.%]="((selectedCourse()!.total_seats - selectedCourse()!.open_seats) / selectedCourse()!.total_seats) * 100"
+                ></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Badges -->
+          <div class="badges">
+            <span *ngIf="selectedCourse()!.is_lab" class="badge lab-badge">Lab Course</span>
+            <span
+              *ngIf="selectedCourse()!.is_open"
+              class="badge open-badge"
+            >
+              Open
+            </span>
+            <span
+              *ngIf="!selectedCourse()!.is_open"
+              class="badge closed-badge"
+            >
+              Closed
+            </span>
+          </div>
+        </div>
+      </div>
+      <div class="dialog-footer">
+        <button class="close-btn" (click)="closeDialog()">Close</button>
+      </div>
+    </div>
+  </div>
+</div>

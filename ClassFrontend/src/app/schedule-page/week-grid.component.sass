@@ -1,0 +1,208 @@
+// Week Grid Component Styles
+.week-grid
+  flex: 1
+  min-width: 0
+  display: flex
+  flex-direction: column
+
+  .grid-header
+    padding: 1rem 2rem 0.75rem
+    display: flex
+    align-items: center
+    justify-content: space-between
+
+    h2
+      font-size: 1.25rem
+      font-weight: 600
+      color: #1e293b
+      margin: 0
+
+    .credits-badge
+      background-color: #e2e8f0
+      color: #475569
+      padding: 0.25rem 0.75rem
+      border-radius: 0.25rem
+      font-size: 0.75rem
+      font-weight: 500
+
+  .grid-container
+    flex: 1
+    overflow: auto
+
+    .grid-wrapper
+      display: inline-block
+      min-width: 100%
+
+      // Day Headers
+      .day-headers
+        display: flex
+        position: sticky
+        top: 0
+        background: white
+        z-index: 10
+        border-bottom: 1px solid #cbd5e1
+
+        .time-column
+          width: 5rem
+          flex-shrink: 0
+          border-right: 1px solid #cbd5e1
+
+        .day-header
+          flex: 1
+          min-width: 140px
+          padding: 0.75rem 1rem
+          text-align: center
+          border-right: 1px solid #cbd5e1
+
+          &:last-child
+            border-right: none
+
+          .day-title
+            font-weight: 600
+            color: #1e293b
+
+      // Grid Content
+      .grid-content
+        display: flex
+        position: relative
+
+        // Time Labels
+        .time-labels
+          width: 5rem
+          flex-shrink: 0
+          border-right: 1px solid #cbd5e1
+
+          .time-slot
+            height: 60px
+            border-bottom: 1px solid #e2e8f0
+            padding: 0.25rem 0.5rem
+            font-size: 0.75rem
+            color: #64748b
+            display: flex
+            align-items: flex-start
+
+        // Day Columns
+        .day-column
+          flex: 1
+          min-width: 140px
+          position: relative
+          border-right: 1px solid #cbd5e1
+
+          &:last-child
+            border-right: none
+
+          // Hour slots
+          .hour-slot
+            height: 60px
+            border-bottom: 1px solid #e2e8f0
+            transition: background-color 0.2s ease
+
+            &:hover
+              background-color: rgba(59, 130, 246, 0.03)
+
+          // Events
+          .event-block
+            position: absolute
+            left: 2px
+            right: 2px
+            border-radius: 4px
+            padding: 0.25rem 0.5rem
+            font-size: 0.75rem
+            overflow: hidden
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1)
+            cursor: pointer
+            transition: all 0.2s ease
+            min-height: 30px
+
+            &:hover
+              box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15)
+              transform: translateY(-1px)
+
+            .event-title
+              font-weight: 500
+              margin-bottom: 0.125rem
+              overflow: hidden
+              text-overflow: ellipsis
+              white-space: nowrap
+
+            .event-location
+              font-size: 10px
+              opacity: 0.9
+              overflow: hidden
+              text-overflow: ellipsis
+              white-space: nowrap
+
+            .event-time
+              font-size: 10px
+              opacity: 0.8
+
+// Event Colors (you can customize these)
+.event-color-0
+  background-color: #3b82f6
+
+.event-color-1
+  background-color: #10b981
+
+.event-color-2
+  background-color: #f59e0b
+
+.event-color-3
+  background-color: #ef4444
+
+.event-color-4
+  background-color: #8b5cf6
+
+.event-color-5
+  background-color: #06b6d4
+
+.event-color-6
+  background-color: #84cc16
+
+.event-color-7
+  background-color: #f97316
+
+// Responsive adjustments
+@media (max-width: 768px)
+  .week-grid
+    .grid-header
+      padding: 0.75rem 1rem 0.5rem
+
+      h2
+        font-size: 1.125rem
+
+    .grid-container
+      .grid-wrapper
+        .day-headers
+          .time-column
+            width: 4rem
+
+          .day-header
+            min-width: 120px
+            padding: 0.5rem 0.75rem
+
+            .day-title
+              font-size: 0.875rem
+
+        .grid-content
+          .time-labels
+            width: 4rem
+
+            .time-slot
+              padding: 0.125rem 0.25rem
+              font-size: 0.625rem
+
+          .day-column
+            min-width: 120px
+
+            .event-block
+              left: 1px
+              right: 1px
+              padding: 0.125rem 0.25rem
+              font-size: 0.625rem
+
+              .event-title
+                font-size: 0.625rem
+
+              .event-location,
+              .event-time
+                font-size: 9px

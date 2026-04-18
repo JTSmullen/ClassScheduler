@@ -1,0 +1,61 @@
+<div class="week-grid">
+  <div class="grid-header" *ngIf="title">
+    <h2>{{ title }}</h2>
+    <span class="credits-badge">{{ totalCredits() }} Credits</span>
+  </div>
+  <div class="grid-header" *ngIf="!title">
+    <span class="credits-badge">{{ totalCredits() }} Credits</span>
+  </div>
+  <div class="grid-container">
+    <div class="grid-wrapper">
+      <!-- Day headers -->
+      <div class="day-headers">
+        <div class="time-column"></div>
+        <div *ngFor="let day of DAYS" class="day-header">
+          <div class="day-title">{{ day }}</div>
+        </div>
+      </div>
+
+      <!-- Grid Content -->
+      <div class="grid-content">
+        <!-- Time Labels -->
+        <div class="time-labels">
+          <div *ngFor="let hour of HOURS" class="time-slot">
+            {{ formatHour(hour) }}
+          </div>
+        </div>
+
+        <!-- Day Columns -->
+        <div *ngFor="let day of DAYS; let dayIndex = index" class="day-column">
+          <!-- Hour slots -->
+          <div *ngFor="let hour of HOURS" class="hour-slot"></div>
+
+          <!-- Events -->
+          <ng-container *ngFor="let event of events; trackBy: trackByEvent">
+            <div
+              *ngIf="event.day === dayIndex"
+              class="event-block"
+              [style.top]="getEventPosition(event).top"
+              [style.height]="getEventPosition(event).height"
+              [style.background-color]="event.color"
+              (click)="selectCourse(event.courseSection)"
+            >
+              <div class="event-title">
+                {{ event.courseSection.subject }} {{ event.courseSection.number }}
+              </div>
+              <div *ngIf="isHeightGreaterThan(event, 40)" class="event-location">
+                {{ event.courseSection.location }}
+              </div>
+              <div *ngIf="isHeightGreaterThan(event, 40)" class="event-time">
+                {{ formatHour(event.startHour) }}
+                <span *ngIf="event.startMinute > 0">:{{
+                  event.startMinute.toString().padStart(2, '0')
+                }}</span>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
