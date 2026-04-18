@@ -420,14 +420,18 @@
     .dialog-content
       background: white
       border-radius: 0.5rem
-      max-width: 32rem
+      max-width: 44rem
+      width: min(100%, 44rem)
+      min-width: 32rem
       max-height: 90vh
       overflow-y: auto
-      width: 100%
       margin: 1rem
       box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)
 
       .dialog-header
+        display: flex
+        justify-content: space-between
+        align-items: center
         padding: 1.5rem
         border-bottom: 1px solid #e2e8f0
 
@@ -437,63 +441,82 @@
           color: #1e293b
           margin: 0
 
+        .close-btn
+          background: transparent
+          border: none
+          color: #6b7280
+          cursor: pointer
+          width: 2.5rem
+          height: 2.5rem
+          display: grid
+          place-items: center
+          border-radius: 0.75rem
+          transition: background-color 0.2s ease, color 0.2s ease
+
+          &:hover
+            background-color: #f3f4f6
+            color: #111827
+
       .dialog-body
         padding: 1.5rem
         display: flex
         flex-direction: column
-        gap: 1rem
+        gap: 1.25rem
 
         // Course Info Grid
         .info-grid
           display: grid
-          grid-template-columns: 1fr 1fr
-          gap: 1rem
+          grid-template-columns: repeat(2, minmax(0, 1fr))
+          align-items: start
+          gap: 1.25rem
 
           .info-item
             display: flex
             flex-direction: column
-            gap: 0.25rem
+            gap: 1.125rem
 
             .info-label
               display: flex
               align-items: center
               gap: 0.5rem
               font-size: 0.875rem
-              color: #6b7280
+              color: #4b5563
 
               .icon
-                width: 1rem
-                height: 1rem
+                width: 1.1rem
+                height: 1.1rem
 
             .info-value
-              font-weight: 500
-              color: #1e293b
+              font-weight: 600
+              color: #111827
+              line-height: 1.2
 
         .section-divider
           border: 0
           border-top: 1px solid #e2e8f0
+          margin: 1rem 0
 
         // Faculty Section
         .faculty-section
           display: flex
           flex-direction: column
-          gap: 0.5rem
+          gap: 1rem
 
           .section-label
             display: flex
             align-items: center
-            gap: 0.5rem
-            font-size: 0.875rem
-            color: #6b7280
+            gap: 0.75rem
+            font-size: 0.9rem
+            color: #4b5563
 
             .icon
-              width: 1rem
-              height: 1rem
+              width: 1.1rem
+              height: 1.1rem
 
           .faculty-list
             display: flex
             flex-direction: column
-            gap: 0.25rem
+            gap: 0.5rem
 
             .faculty-item
               font-weight: 500
@@ -503,18 +526,18 @@
         .times-section
           display: flex
           flex-direction: column
-          gap: 0.5rem
+          gap: 1rem
 
           .section-label
             display: flex
             align-items: center
-            gap: 0.5rem
-            font-size: 0.875rem
-            color: #6b7280
+            gap: 0.75rem
+            font-size: 0.9rem
+            color: #4b5563
 
             .icon
-              width: 1rem
-              height: 1rem
+              width: 1.1rem
+              height: 1.1rem
 
           .times-list
             display: flex
@@ -539,23 +562,23 @@
         .enrollment-section
           display: flex
           flex-direction: column
-          gap: 0.5rem
+          gap: 1rem
 
           .section-label
             display: flex
             align-items: center
-            gap: 0.5rem
-            font-size: 0.875rem
-            color: #6b7280
+            gap: 0.75rem
+            font-size: 0.9rem
+            color: #4b5563
 
             .icon
-              width: 1rem
-              height: 1rem
+              width: 1.1rem
+              height: 1.1rem
 
           .enrollment-info
             display: flex
             flex-direction: column
-            gap: 0.5rem
+            gap: 1rem
 
             .enrollment-stats
               display: flex
@@ -590,7 +613,8 @@
         .badges
           display: flex
           flex-wrap: wrap
-          gap: 0.5rem
+          gap: .5rem
+          margin-top: 1rem
 
           .badge
             padding: 0.25rem 0.75rem

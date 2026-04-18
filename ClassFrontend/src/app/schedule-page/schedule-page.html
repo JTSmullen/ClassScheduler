@@ -140,65 +140,63 @@
   </div>
 
   <!-- Course Details Dialog -->
-  <div *ngIf="selectedCourse()" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-    <div class="bg-white rounded-lg max-w-2xl max-h-[90vh] overflow-y-auto w-full mx-4">
-      <div class="p-6">
-        <h2 class="text-2xl font-bold mb-4">
-          {{ selectedCourse()!.subject }} {{ selectedCourse()!.number }}: {{ selectedCourse()!.name }}
-        </h2>
+  <div *ngIf="selectedCourse()" class="course-dialog">
+    <div class="dialog-content">
+      <div class="dialog-header">
+        <h2>{{ selectedCourse()!.subject }} {{ selectedCourse()!.number }}: {{ selectedCourse()!.name }}</h2>
+        <button class="close-btn" (click)="closeDialog()">
+          <lucide-icon [img]="X" class="icon"></lucide-icon>
+        </button>
+      </div>
+      <div class="dialog-body">
 
         <div class="space-y-4">
-          <!-- Course Info Grid -->
-          <div class="grid grid-cols-2 gap-4">
-            <div class="space-y-1">
-              <div class="flex items-center gap-2 text-sm text-gray-500">
-                <lucide-icon [img]="BookOpen" class="w-4 h-4"></lucide-icon>
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="info-label">
+                <lucide-icon [img]="BookOpen" class="icon"></lucide-icon>
                 <span>Section</span>
               </div>
-              <div class="font-medium">{{ selectedCourse()!.section }}</div>
+              <div class="info-value">{{ selectedCourse()!.section }}</div>
             </div>
-
-            <div class="space-y-1">
-              <div class="flex items-center gap-2 text-sm text-gray-500">
-                <lucide-icon [img]="Calendar" class="w-4 h-4"></lucide-icon>
+            <div class="info-item">
+              <div class="info-label">
+                <lucide-icon [img]="Calendar" class="icon"></lucide-icon>
                 <span>Semester</span>
               </div>
-              <div class="font-medium">{{ selectedCourse()!.semester }}</div>
+              <div class="info-value">{{ selectedCourse()!.semester }}</div>
             </div>
-
-            <div class="space-y-1">
-              <div class="flex items-center gap-2 text-sm text-gray-500">
-                <lucide-icon [img]="MapPin" class="w-4 h-4"></lucide-icon>
+            <div class="info-item">
+              <div class="info-label">
+                <lucide-icon [img]="MapPin" class="icon"></lucide-icon>
                 <span>Location</span>
               </div>
-              <div class="font-medium">{{ selectedCourse()!.location }}</div>
+              <div class="info-value">{{ selectedCourse()!.location }}</div>
             </div>
-
-            <div class="space-y-1">
-              <div class="flex items-center gap-2 text-sm text-gray-500">
-                <lucide-icon [img]="BookOpen" class="w-4 h-4"></lucide-icon>
+            <div class="info-item">
+              <div class="info-label">
+                <lucide-icon [img]="BookOpen" class="icon"></lucide-icon>
                 <span>Credits</span>
               </div>
-              <div class="font-medium">{{ selectedCourse()!.credits }}</div>
+              <div class="info-value">{{ selectedCourse()!.credits }}</div>
             </div>
           </div>
 
-          <hr class="border-gray-200" />
+          <div class="section-divider"></div>
 
-          <!-- Faculty -->
-          <div class="space-y-2">
-            <div class="flex items-center gap-2 text-sm text-gray-500">
-              <lucide-icon [img]="User" class="w-4 h-4"></lucide-icon>
+          <div class="faculty-section">
+            <div class="section-label">
+              <lucide-icon [img]="User" class="icon"></lucide-icon>
               <span>Faculty</span>
             </div>
-            <div class="space-y-1">
-              <div *ngFor="let faculty of selectedCourse()!.faculty" class="font-medium">
+            <div class="faculty-list">
+              <div *ngFor="let faculty of selectedCourse()!.faculty" class="faculty-item">
                 {{ faculty }}
               </div>
             </div>
           </div>
 
-          <hr class="border-gray-200" />
+          <div class="section-divider"></div>
 
           <!-- Meeting Times -->
           <div class="times-section">
@@ -223,7 +221,7 @@
             </div>
           </div>
 
-          <hr class="border-gray-200" />
+          <div class="section-divider"></div>
 
           <!-- Enrollment -->
           <div class="enrollment-section">
@@ -241,7 +239,8 @@
               <div class="progress-bar">
                 <div
                   class="progress-fill"
-                  [class]="selectedCourse()!.open_seats > 0 ? 'available' : 'full'"
+                  [class.available]="selectedCourse()!.open_seats > 0"
+                  [class.full]="selectedCourse()!.open_seats <= 0"
                   [style.width.%]="((selectedCourse()!.total_seats - selectedCourse()!.open_seats) / selectedCourse()!.total_seats) * 100"
                 ></div>
               </div>
