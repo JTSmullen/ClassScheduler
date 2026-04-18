@@ -61,6 +61,7 @@ public class ScheduleService {
 
         // Add the section to the list
         schedule.getCourseSections().add(section);
+        schedule.setLastSave(new java.sql.Time(System.currentTimeMillis()));
 
         // Update schedule so checkConflicts can see added course
         scheduleRepo.saveAndFlush(schedule);
@@ -88,6 +89,7 @@ public class ScheduleService {
 
         // Remove the section from the list
         schedule.getCourseSections().remove(section);
+        schedule.setLastSave(new java.sql.Time(System.currentTimeMillis()));
 
         // Update schedule so checkConflicts can see added course
         scheduleRepo.saveAndFlush(schedule);
@@ -162,6 +164,7 @@ public class ScheduleService {
         schedule.setUser(user);
         schedule.setCourseSections(new ArrayList<>());
         schedule.setHasConflict(false);
+        schedule.setLastSave(new java.sql.Time(System.currentTimeMillis()));
 
         scheduleRepo.save(schedule);
 
