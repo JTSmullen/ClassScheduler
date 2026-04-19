@@ -7,14 +7,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import java.util.List;
 
 @Repository
-public interface CourseSectionRepository extends JpaRepository<CourseSection, Long> {
+public interface CourseSectionRepository extends JpaRepository<CourseSection, Long>, JpaSpecificationExecutor<CourseSection> {
 
-    @Query("SELECT c FROM CourseSection c " +
-            "WHERE LOWER(c.name) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-            "OR LOWER(c.subject) LIKE LOWER(CONCAT('%', :keyword, '%'))")
-    List<CourseSection> searchByKeyword(@Param("keyword") String keyword);
 }

@@ -12,6 +12,7 @@ import java.util.Set;
 @Setter
 @AllArgsConstructor
 public class FilterOptionsDTO {
+    private String semester;
     private Set<String> subjects;
     private Set<Integer> numbers;
     private Set<Integer> credits;
