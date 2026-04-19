@@ -17,6 +17,7 @@ import {
   searchCourses,
   setAuthToken,
 } from './services.js';
+import { renderRecommendationScreen } from './recommendations.js';
 
 // ################## SHARED STATE AND UI HELPERS ##################
 
@@ -761,6 +762,14 @@ function handleLogout() {
   renderApp();
 }
 
+function openRecommendationRoute() {
+  window.location.hash = 'recommendations';
+}
+
+function isRecommendationRoute() {
+  return window.location.hash.replace('#', '').trim().toLowerCase() === 'recommendations';
+}
+
 // ################## SCREEN RENDERING ##################
 
 // Draw the login or register screen depending on the current auth mode.
@@ -886,6 +895,12 @@ function renderAuthScreen() {
     renderApp();
   });
   panel.appendChild(toggle);
+
+  const recommendationButton = document.createElement('button');
+  recommendationButton.className = 'link-button';
+  recommendationButton.textContent = 'Open class recommendation page';
+  recommendationButton.addEventListener('click', openRecommendationRoute);
+  panel.appendChild(recommendationButton);
 
   app.appendChild(shell);
 }
@@ -1362,11 +1377,21 @@ function renderMainScreen() {
   subtitle.textContent = 'Search courses, build a candidate schedule, and view it in a weekly calendar.';
   titleBlock.appendChild(subtitle);
 
+  const headerActions = document.createElement('div');
+  headerActions.className = 'header-actions';
+  header.appendChild(headerActions);
+
+  const recommendationButton = document.createElement('button');
+  recommendationButton.className = 'button button--secondary';
+  recommendationButton.textContent = 'Class recommendations';
+  recommendationButton.addEventListener('click', openRecommendationRoute);
+  headerActions.appendChild(recommendationButton);
+
   const logoutButton = document.createElement('button');
   logoutButton.className = 'button button--ghost';
   logoutButton.textContent = 'Log out';
   logoutButton.addEventListener('click', handleLogout);
-  header.appendChild(logoutButton);
+  headerActions.appendChild(logoutButton);
 
   const error = document.createElement('div');
   error.id = 'error';
@@ -1404,6 +1429,18 @@ function renderMainScreen() {
 // Pick the correct screen based on whether the user is authenticated.
 // This acts like a very small router or screen controller.
 function renderApp() {
+  if (isRecommendationRoute()) {
+    clearApp();
+
+    const app = document.getElementById('app');
+    renderRecommendationScreen({
+      app,
+      isAuthenticated: Boolean(state.token),
+      renderApp,
+    });
+    return;
+  }
+
   if (state.token) {
     renderMainScreen();
     return;
@@ -1415,5 +1452,6 @@ function renderApp() {
 // Start the frontend once the DOM exists.
 // DOMContentLoaded means the initial HTML has been parsed and the page is ready for JS.
 document.addEventListener('DOMContentLoaded', () => {
+  window.addEventListener('hashchange', renderApp);
   renderApp();
 });
