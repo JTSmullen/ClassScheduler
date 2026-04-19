@@ -4,6 +4,7 @@ import { LoginPage } from './login-page/login-page';
 import { RegisterPage } from './register-page/register-page';
 import { Home } from './pages/home/home';
 import { SchedulePage } from './schedule-page/schedule-page';
+import { CreateSchedulePage } from './create-schedule-page/create-schedule-page'
 
 export const routes: Routes = [
   { path: '', component: LandingPage },
@@ -11,5 +12,6 @@ export const routes: Routes = [
   { path: 'register', component: RegisterPage },
   { path: 'home', component: Home },
   { path: 'schedule', component: SchedulePage },
+  {path: 'create', component: CreateSchedulePage },
   { path: '**', redirectTo: '' },
 ];
