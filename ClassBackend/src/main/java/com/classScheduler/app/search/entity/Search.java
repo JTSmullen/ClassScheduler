@@ -42,7 +42,4 @@ public class Search {
     // Specify name of column in Search entity to reference the User which owns it
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
-
-    // save keyword to check on future searchAndFilter usages that we are not using unnecessary DB calls
-    private Set<String> keywords;
 }

@@ -48,7 +48,7 @@ public class CourseSectionSpecification {
 
             // deal with potential multiple faculty
             if (filter.getFaculty() != null && !filter.getFaculty().isEmpty()) {
-                Join<Object, Object> facultyJoin = root.join("faculty");
+                Join<CourseSection, String> facultyJoin = root.join("faculty");
                 predicate = cb.and(predicate, facultyJoin.in(filter.getFaculty()));
             }
 

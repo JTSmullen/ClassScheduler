@@ -14,8 +14,15 @@ public class SearchResponseDTO {
     private Set<SearchItemDTO> results;
     private FilterOptionsDTO filterOptions;
 
-    public SearchResponseDTO(Set<SearchItemDTO> results, FilterOptionsDTO filterOptions) {
+    private int currentPage;
+    private int totalPages;
+    private long totalElements;
+
+    public SearchResponseDTO(Set<SearchItemDTO> results, FilterOptionsDTO filterOptions, int currentPage, int totalPages, long totalElements) {
         this.results = results;
         this.filterOptions = filterOptions;
+        this.currentPage = currentPage;
+        this.totalPages = totalPages;
+        this.totalElements = totalElements;
     }
 }

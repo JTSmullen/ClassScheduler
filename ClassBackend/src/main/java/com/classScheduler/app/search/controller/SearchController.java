@@ -8,8 +8,11 @@ import com.classScheduler.app.search.dto.SearchFilterDTO;
 import com.classScheduler.app.search.dto.FilterOptionsDTO;
 
 import jakarta.validation.Valid;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import org.springframework.data.domain.Pageable;
 
 import java.util.*;
 
@@ -28,8 +31,11 @@ public class SearchController {
 
     @PostMapping("/filter")
     // @RequestBody used when data is sent as JSON in the request body
-    public ResponseEntity<SearchResponseDTO> searchAndFilter(@Valid @RequestBody SearchFilterDTO filters) {
-        return ResponseEntity.ok(searchService.searchAndFilter(filters));
+    // Include default page number and size. Embed these parameters in the URL but DTO in JSON body
+    public ResponseEntity<SearchResponseDTO> searchAndFilter(@RequestBody SearchFilterDTO filters, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "50") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+
+        return ResponseEntity.ok(searchService.searchAndFilter(filters, pageable));
     }
 
     @GetMapping("/search/{id}")

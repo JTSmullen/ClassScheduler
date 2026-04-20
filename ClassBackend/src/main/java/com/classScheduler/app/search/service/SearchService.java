@@ -23,6 +23,10 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -42,7 +46,7 @@ public class SearchService {
     }
 
     @Transactional
-    public SearchResponseDTO searchAndFilter(SearchFilterDTO filter) {
+    public SearchResponseDTO searchAndFilter(SearchFilterDTO filter, Pageable pageable) {
         Set<String> keywordSet = Optional.ofNullable(filter.getKeyword())
                 .orElse("")
                 .trim()
@@ -57,8 +61,8 @@ public class SearchService {
         Specification<CourseSection> spec = CourseSectionSpecification.build(filter, keywordSet);
 
         // execute query
-        List<CourseSection> resultsList = courseSectionRepository.findAll(spec);
-        Set<CourseSection> results = new HashSet<>(resultsList);
+        Page<CourseSection> resultsPage = courseSectionRepository.findAll(spec, pageable);
+        Set<CourseSection> results = new HashSet<>(resultsPage.getContent());
 
         // manually apply time filters
         List<CourseSection> filteredList = results.stream()
@@ -89,7 +93,7 @@ public class SearchService {
         FilterOptionsDTO filterOptions = buildFilterOptionsDTO(uniqueFiltered);
 
         // return search results and
-        return new SearchResponseDTO(resultDTOs, filterOptions);
+        return new SearchResponseDTO(resultDTOs, filterOptions, resultsPage.getNumber(), resultsPage.getTotalPages(), resultsPage.getTotalElements());
     }
 
     // helper method to build SearchI
@@ -145,6 +149,7 @@ public class SearchService {
                 .collect(Collectors.toSet());
 
         Set<String> faculty = sections.stream()
+                .filter(c -> c.getFaculty() != null)
                 .flatMap(c -> c.getFaculty().stream())
                 .collect(Collectors.toSet());
 
