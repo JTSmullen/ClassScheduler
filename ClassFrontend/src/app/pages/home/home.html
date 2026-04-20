@@ -4,5 +4,15 @@
 <button>Search</button>
 <!-- <br>
 </br> -->
-<button>Create New Schedule</button>
+
+<button (click)="toggleCreate()">Create New Schedule</button>
+<div *ngIf="showCreate" class="dropdown">
+  <input
+    type="text"
+    [(ngModel)]="scheduleName"
+    placeholder="Enter schedule name"
+  />
+  <button (click)="createSchedule()">Create</button>
+</div>
+
 <button routerLink="/schedule">View Schedule</button>
