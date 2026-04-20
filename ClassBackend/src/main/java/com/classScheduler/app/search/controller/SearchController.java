@@ -2,6 +2,7 @@ package com.classScheduler.app.search.controller;
 
 import com.classScheduler.app.course.dto.CourseSectionDTO;
 import com.classScheduler.app.search.dto.SearchItemDTO;
+import com.classScheduler.app.search.dto.SearchResponseDTO;
 import com.classScheduler.app.search.service.SearchService;
 import com.classScheduler.app.search.dto.SearchFilterDTO;
 import com.classScheduler.app.search.dto.FilterOptionsDTO;
@@ -27,13 +28,8 @@ public class SearchController {
 
     @PostMapping("/filter")
     // @RequestBody used when data is sent as JSON in the request body
-    public ResponseEntity<List<SearchItemDTO>> searchAndFilter(@Valid @RequestBody SearchFilterDTO filters) {
+    public ResponseEntity<SearchResponseDTO> searchAndFilter(@Valid @RequestBody SearchFilterDTO filters) {
         return ResponseEntity.ok(searchService.searchAndFilter(filters));
-    }
-
-    @GetMapping("/filter/options")
-    public ResponseEntity<FilterOptionsDTO> filterOptions() {
-        return ResponseEntity.ok(searchService.getFilterOptions());
     }
 
     @GetMapping("/search/{id}")
