@@ -65,29 +65,35 @@ public class CourseSectionSpecification {
                     for (ClassTime reqTime : requestedRange) {
                         // subquery to check if this specific CourseSection has a time matching reqTime
                         Subquery<Integer> subquery = query.subquery(Integer.class);
-                        Root<CourseSection> subRoot = subquery.from(CourseSection.class);
-                        Join<CourseSection, ClassTime> subTimesJoin = subRoot.join("times");
+
+                        // use proper jpa correlated root
+                        Root<CourseSection> correlatedRoot = subquery.correlate(root);
+                        Join<CourseSection, ClassTime> subTimesJoin = correlatedRoot.join("times");
 
                         subquery.select(cb.literal(1));
 
-                        // ensure that the subquery is only looking at the current section's times
-                        Predicate correlateId = cb.equal(subRoot.get("id"), root.get("id"));
+                        Predicate timeChecks = cb.conjunction();
 
-                        // check if the day matches the requested day
-                        Predicate matchDay = cb.equal(subTimesJoin.get("day"), reqTime.getDay());
 
-                        // check start time is equal to or after the requested start time
-                        Predicate matchStart = cb.greaterThanOrEqualTo(subTimesJoin.<java.time.LocalTime>get("start_time"), reqTime.getStartTime());
-                        // check end time is before or equal to the requested end time
-                        Predicate matchEnd = cb.lessThanOrEqualTo(subTimesJoin.<java.time.LocalTime>get("end_time"), reqTime.getEndTime());
+                        if (reqTime.getDay() != null) {
+                            timeChecks = cb.and(timeChecks, cb.equal(subTimesJoin.get("day"), reqTime.getDay()));
+                        }
 
-                        // combine checks into complete subquery
-                        subquery.where(cb.and(correlateId, matchDay, matchStart, matchEnd));
+                        if (reqTime.getStartTime() != null) {
+                            timeChecks = cb.and(timeChecks, cb.greaterThanOrEqualTo(
+                                    subTimesJoin.<java.time.LocalTime>get("startTime"), reqTime.getStartTime()
+                            ));
+                        }
 
-                        // use cb.exists since we want to match if at least one meeting time fits
+                        if (reqTime.getEndTime() != null) {
+                            timeChecks = cb.and(timeChecks, cb.lessThanOrEqualTo(
+                                    subTimesJoin.<java.time.LocalTime>get("endTime"), reqTime.getEndTime()
+                            ));
+                        }
+
+                        subquery.where(timeChecks);
                         rangePredicate = cb.and(rangePredicate, cb.exists(subquery));
                     }
-                    // allow course in results if any time slot matches
                     allTimeRangesPredicate = cb.or(allTimeRangesPredicate, rangePredicate);
                 }
 
