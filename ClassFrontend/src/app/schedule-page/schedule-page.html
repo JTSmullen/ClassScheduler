@@ -3,18 +3,7 @@
   <div class="header">
     <div class="header-content">
       <div class="title-section">
-        <h1>Weekly Schedule</h1>
-        <div *ngIf="!compareMode()">
-          <select
-            [value]="selectedScheduleId()"
-            (change)="onScheduleChange($event)"
-            class="schedule-selector"
-          >
-            <option *ngFor="let schedule of availableSchedules()" [value]="schedule.id">
-              {{ schedule.name }}
-            </option>
-          </select>
-        </div>
+        <h1 *ngIf="!compareMode()">{{ currentSchedule().name }}</h1>
       </div>
       <div class="controls">
         <button
@@ -40,22 +29,32 @@
     <div class="compare-controls">
       <span class="compare-label">Compare:</span>
       <div class="schedule-selectors">
+        <!-- Dropdown 1: Fixed Binding -->
         <select
-          [value]="compareScheduleIds()[0]"
           (change)="onCompareSchedule1Change($event)"
           class="selector"
         >
-          <option *ngFor="let schedule of availableSchedules()" [value]="schedule.id">
+          <option 
+            *ngFor="let schedule of availableSchedules()" 
+            [value]="schedule.id"
+            [selected]="schedule.id === compareScheduleIds()[0]"
+          >
             {{ schedule.name }}
           </option>
         </select>
+        
         <span class="vs-text">vs</span>
+        
+        <!-- Dropdown 2: Fixed Binding -->
         <select
-          [value]="compareScheduleIds()[1]"
           (change)="onCompareSchedule2Change($event)"
           class="selector"
         >
-          <option *ngFor="let schedule of availableSchedules()" [value]="schedule.id">
+          <option 
+            *ngFor="let schedule of availableSchedules()" 
+            [value]="schedule.id"
+            [selected]="schedule.id === compareScheduleIds()[1]"
+          >
             {{ schedule.name }}
           </option>
         </select>

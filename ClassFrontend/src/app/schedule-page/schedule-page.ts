@@ -299,14 +299,16 @@ export class SchedulePage implements OnInit {
 
     this.scheduleService.removeCourse(scheduleId, course.id).subscribe({
       next: () => {
-        // Remove the course from the current schedule
+        // Clear the schedule events to force a reload from the backend
         this.availableSchedules.update(schedules => {
           const schedule = schedules.find(s => s.id === scheduleId);
           if (schedule) {
-            schedule.events = schedule.events.filter(event => event.courseSection.id !== course.id);
+            schedule.events = [];
           }
           return [...schedules];
         });
+        // Now reload the schedule details to fetch fresh data
+        this.loadScheduleDetails(scheduleId);
         this.removingCourse.set(false);
         this.closeDialog();
       },
