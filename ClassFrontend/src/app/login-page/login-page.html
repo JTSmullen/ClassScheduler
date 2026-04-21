@@ -1,0 +1,56 @@
+<div class="login-page">
+  <div class="login-shell">
+    <div class="brand-bar">
+      <lucide-icon [img]="Calendar" class="brand-icon"></lucide-icon>
+      <span class="brand-name">ClassScheduler</span>
+    </div>
+
+    <div class="login-card">
+      <div class="card-header">
+        <h1>Welcome Back</h1>
+        <p>Sign in to your account to manage your schedules.</p>
+      </div>
+
+      <form (submit)="handleLogin($event)" class="login-form">
+        <div class="field-group">
+          <label for="username">Username</label>
+          <input
+            id="username"
+            type="text"
+            class="input-field"
+            placeholder="your school username"
+            [value]="username"
+            (input)="username = $any($event.target).value"
+            required
+          />
+        </div>
+
+        <div class="field-group">
+          <label for="password">Password</label>
+          <input
+            id="password"
+            type="password"
+            class="input-field"
+            placeholder="••••••••"
+            [value]="password"
+            (input)="password = $any($event.target).value"
+            required
+          />
+        </div>
+
+        <div class="error-message" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+        <button type="submit" class="btn btn-primary btn-full" [disabled]="loading">
+          {{ loading ? 'Signing in...' : 'Sign In' }}
+        </button>
+      </form>
+
+      <p class="signup-text">
+        Don't have an account?
+        <a routerLink="/register" class="link">Sign up</a>
+      </p>
+    </div>
+
+    <a routerLink="/" class="btn btn-ghost btn-full">← Back to Home</a>
+  </div>
+</div>
