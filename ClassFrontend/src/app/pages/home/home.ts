@@ -3,6 +3,7 @@ import { RouterModule, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { AuthService, UserInfo } from '../../auth/auth.service';
 
 @Component({
   selector: 'app-home',
@@ -17,7 +18,14 @@ export class Home {
   loading = false;
   errorMessage = '';
 
-  constructor(private http: HttpClient, private router: Router) {}
+  username = '';
+  password = '';
+
+  constructor(
+    private http: HttpClient,
+    private router: Router,
+    private authService: AuthService
+  ) {}
 
   toggleCreate() {
     this.showCreate = !this.showCreate;
@@ -30,50 +38,83 @@ export class Home {
     this.errorMessage = '';
     this.loading = true;
 
-    const newSchedule = {
-      name: this.scheduleName
-    };
-
-    // optional auth token (safe if not used by backend)
+    const newSchedule = { name: this.scheduleName };
     const token = localStorage.getItem('auth_token');
 
-    this.http.post<any>(
-      'http://localhost:8080/api/v1/schedule/create',
-      newSchedule,
-      token
-        ? {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
+    this.http
+      .post<any>(
+        'http://localhost:8080/api/v1/schedule/create',
+        newSchedule,
+        token ? { headers: { Authorization: `Bearer ${token}` } } : {}
+      )
+      .subscribe({
+        next: (response) => {
+          console.log('Created:', response);
+          this.loading = false;
+          this.showCreate = false;
+          this.scheduleName = '';
+
+          if (response?.id) {
+            this.router.navigate(['/schedule']);
           }
-        : {}
-    ).subscribe({
-      next: (response) => {
-        console.log('Created:', response);
-
-        this.loading = false;
-        this.showCreate = false;
-        this.scheduleName = '';
-
-        // navigate to the new schedule page
-        if (response?.id) {
-          console.log('NAVIGATING WITH RESPONSE:', response);
-          this.router.navigate(['/home']);
+        },
+        error: (error) => {
+          this.loading = false;
+          if (error.error && (error.error.detail || error.error.message)) {
+            this.errorMessage = error.error.detail || error.error.message;
+          } else if (error.status === 400) {
+            this.errorMessage = 'Invalid schedule data';
+          } else {
+            this.errorMessage = 'Failed to create schedule. Try again.';
+          }
+          console.error('Create schedule error:', error);
         }
-      },
-      error: (error) => {
-        this.loading = false;
+      }); // End of createSchedule subscription
+  } // End of createSchedule method
 
-        if (error.error && (error.error.detail || error.error.message)) {
-          this.errorMessage = error.error.detail || error.error.message;
-        } else if (error.status === 400) {
-          this.errorMessage = 'Invalid schedule data';
-        } else {
-          this.errorMessage = 'Failed to create schedule. Try again.';
-        }
+  login() {
+    this.loading = true;
 
-        console.error('Create schedule error:', error);
-      }
-    });
-  }
-}
+    this.authService
+      .login({ username: this.username, password: this.password })
+      .subscribe({
+        next: (response) => {
+          localStorage.setItem('auth_token', response.token);
+
+          this.authService.fetchUserInfo(response.token).subscribe({
+            next: (user: any) => {
+              localStorage.setItem(
+                'current_user',
+                JSON.stringify({
+                  id: user.id,
+                  username: response.username,
+                  name: user.name,
+                  firstName: user.firstName,
+                  schedules: user.schedules,
+                })
+              );
+
+              this.loading = false;
+              this.router.navigate(['/home']);
+            },
+            error: (fetchError) => {
+              this.loading = false;
+              this.errorMessage = 'Signed in, but could not load profile.';
+              console.error('Fetch profile error:', fetchError);
+            },
+          });
+        },
+        error: (error) => {
+          this.loading = false;
+          if (error.error && (error.error.detail || error.error.message)) {
+            this.errorMessage = error.error.detail || error.error.message;
+          } else if (error.status === 401) {
+            this.errorMessage = 'Invalid username or password';
+          } else {
+            this.errorMessage = 'Unable to sign in. Please try again.';
+          }
+          console.error('Login error:', error);
+        },
+      }); // End of login subscription
+  } // End of login method
+} // End of Class
