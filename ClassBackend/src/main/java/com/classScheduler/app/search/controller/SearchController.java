@@ -2,13 +2,18 @@ package com.classScheduler.app.search.controller;
 
 import com.classScheduler.app.course.dto.CourseSectionDTO;
 import com.classScheduler.app.search.dto.SearchItemDTO;
+import com.classScheduler.app.search.dto.SearchResponseDTO;
 import com.classScheduler.app.search.service.SearchService;
 import com.classScheduler.app.search.dto.SearchFilterDTO;
 import com.classScheduler.app.search.dto.FilterOptionsDTO;
 
 import jakarta.validation.Valid;
+import org.apache.coyote.Response;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import org.springframework.data.domain.Pageable;
 
 import java.util.*;
 
@@ -25,25 +30,13 @@ public class SearchController {
         this.searchService = searchService;
     }
 
-    @PostMapping
-    // @RequestBody used when data is sent as JSON in the request body
-    public ResponseEntity<List<SearchItemDTO>> search(@Valid @RequestBody String query) {
-
-        Set<String> keywords = new HashSet<>(Arrays.asList(query.trim().split("\\s+")));
-
-        return ResponseEntity.ok(searchService.search(keywords));
-    }
-
-
     @PostMapping("/filter")
-    public ResponseEntity<List<SearchItemDTO>> filter(@Valid @RequestBody SearchFilterDTO filter) {
+    // @RequestBody used when data is sent as JSON in the request body
+    // Include default page number and size. Embed these parameters in the URL but DTO in JSON body
+    public ResponseEntity<SearchResponseDTO> searchAndFilter(@RequestBody SearchFilterDTO filters, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "50") int size) {
+        Pageable pageable = PageRequest.of(page, size);
 
-        return ResponseEntity.ok(searchService.filterResults(filter));
-    }
-
-    @GetMapping("/filter/options")
-    public ResponseEntity<FilterOptionsDTO> filterOptions() {
-        return ResponseEntity.ok(searchService.getFilterOptions());
+        return ResponseEntity.ok(searchService.searchAndFilter(filters, pageable));
     }
 
     @GetMapping("/search/{id}")
@@ -51,5 +44,10 @@ public class SearchController {
     // @PathVariable extracts the value from the URL path
     public ResponseEntity<CourseSectionDTO> searchResultDetails(@PathVariable Long id) {
         return ResponseEntity.ok(searchService.getCourseDetails(id));
+    }
+
+    @GetMapping("/filter/options")
+    public ResponseEntity<FilterOptionsDTO> getFilterOptionsDTO() {
+        return ResponseEntity.ok(searchService.buildFilterOptionsDTO());
     }
 }

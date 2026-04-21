@@ -2,6 +2,7 @@ package com.classScheduler.app.search.service;
 
 import com.classScheduler.app.course.entity.ClassTime;
 import com.classScheduler.app.course.entity.Course;
+import com.classScheduler.app.course.spec.CourseSectionSpecification;
 import com.classScheduler.app.exception.customs.CourseSectionNotFoundException;
 import com.classScheduler.app.schedule.dto.ScheduleDTO;
 import com.classScheduler.app.schedule.entity.Schedule;
@@ -16,15 +17,19 @@ import com.classScheduler.app.security.util.SecurityUtil;
 import com.classScheduler.app.user.entities.User;
 import com.classScheduler.app.user.repository.UserRepository;
 import com.classScheduler.app.search.repository.SearchRepository;
+import com.classScheduler.app.search.dto.SearchResponseDTO;
 
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Set;
-import java.util.HashSet;
-import java.util.ArrayList;
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 public class SearchService {
@@ -40,47 +45,35 @@ public class SearchService {
         this.searchRepository = searchRepository;
     }
 
-    @Transactional
-    public List<SearchItemDTO> search(Set<String> keywords) {
-        // get current user that we have cached and then findById to get current User entity in case changes made since cached.
-        User cachedUser = securityUtil.getCurrentUser().orElseThrow();
-        User user = userRepository.findById(cachedUser.getId()).orElseThrow();
+    @Transactional(readOnly = true)
+    public SearchResponseDTO searchAndFilter(SearchFilterDTO filter, Pageable pageable) {
+        Set<String> keywordSet = Optional.ofNullable(filter.getKeyword())
+                .orElse("")
+                .trim()
+                .isEmpty()
+                ? new HashSet<>()
+                : Arrays.stream(filter.getKeyword().trim().split("\\s+"))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toSet());
 
-        // delete old search
-        if (user.getSearch() != null) {
-            Search oldSearch = user.getSearch();
-            user.setSearch(null);
-            // delete User's current Search with hibernate and use flush to force immediate removal
-            searchRepository.delete(oldSearch);
-            searchRepository.flush();
-        }
+        // build specification
+        Specification<CourseSection> spec = CourseSectionSpecification.build(filter, keywordSet);
 
-        // create new search entity
-        Search search = new Search();
-        user.setSearch(search);
-        search.setUser(user);
+        // execute query
+        Page<CourseSection> resultsPage = courseSectionRepository.findAll(spec, pageable);
+        Set<CourseSection> results = new HashSet<>(resultsPage.getContent());
 
-        // save results in Set to avoid duplicates
-        Set<CourseSection> results = new HashSet<>();
-        // get resulting classes for keywords
-        for (String keyword : keywords) {
-            results.addAll(courseSectionRepository.searchByKeyword(keyword));
-        }
+        // build results DTO
+        Set<SearchItemDTO> resultsDTO = buildSearchResultsDTO(results);
 
-        // explicitly remove duplicate course sections since it seems like there are some duplicates in db
-        Set<CourseSection> uniqueResults = new HashSet<>(results.stream()
-                .collect(Collectors.toMap(
-                        c -> c.getSubject() + "-" + c.getNumber() + "-" + c.getSection(),
-                        c -> c,
-                        (existing, replacement) -> existing // If duplicate found, just keep the first one
-                ))
-                .values());
+        // return search results and
+        return new SearchResponseDTO(resultsDTO, resultsPage.getNumber(), resultsPage.getTotalPages(), resultsPage.getTotalElements());
+    }
 
-        // make arraylist from set with no duplicates
-        search.setResults(uniqueResults);
-
-        // make SearchItemDTO. Less items to avoid sending too much data to frontend. Will be able to look at individual classes to get more info. Will be done by getting from database entry.
-        List<SearchItemDTO> resultsDTO = uniqueResults.stream()
+    // helper method to build SearchI
+    private Set<SearchItemDTO> buildSearchResultsDTO(Set<CourseSection> results) {
+        List<SearchItemDTO> resultsDTOList = results.stream()
                 .map(result -> new SearchItemDTO(
                         result.getSubject(),
                         result.getNumber(),
@@ -93,100 +86,23 @@ public class SearchService {
                 ))
                 .toList();
 
-        searchRepository.save(search);
-        userRepository.save(user);
+        Set<SearchItemDTO> resultsDTO = new HashSet<>(resultsDTOList);
 
         return resultsDTO;
     }
 
     @Transactional(readOnly = true)
-    public List<SearchItemDTO> filterResults(SearchFilterDTO filter) {
-        //Get current user and get their corresponding search object
-        User cachedUser = securityUtil.getCurrentUser().orElseThrow();
-        User user = userRepository.findById(cachedUser.getId()).orElseThrow();
+    public FilterOptionsDTO buildFilterOptionsDTO() {
+        Set<String> semesters = courseSectionRepository.findDistinctSemesters();
+        Set<String> subjects = courseSectionRepository.findDistinctSubjects();
+        Set<Integer> numbers = courseSectionRepository.findDistinctNumbers();
+        Set<Integer> credits = courseSectionRepository.findDistinctCredits();
+        Set<String> faculty = courseSectionRepository.findDistinctFaculty();
 
-        Search search = user.getSearch();
-
-        if (search == null) {
-            throw new IllegalStateException("User has no active search");
-        }
-
-        // filter user's search results by filter
-        List<CourseSection> filtered = search.getResults().stream()
-                .filter(c -> filter.getSubjects() == null || filter.getSubjects().isEmpty()
-                        || filter.getSubjects().stream().anyMatch(sub -> sub.equalsIgnoreCase(c.getSubject())))
-                .filter(c -> filter.getCredits() == null || filter.getCredits().isEmpty()
-                        || filter.getCredits().contains(c.getCredits()))
-                .filter(c -> filter.getNumbers() == null || filter.getNumbers().isEmpty()
-                        || filter.getNumbers().contains(c.getNumber()))
-                .filter(c -> filter.getFaculty() == null || filter.getFaculty().isEmpty()
-                        || (c.getFaculty() != null && c.getFaculty().stream().anyMatch(filter.getFaculty()::contains)))
-                .filter(course -> {
-                    // If no time filter, accept all courses
-                    if (filter.getTimes() == null || filter.getTimes().isEmpty()) return true;
-                    for (List<ClassTime> requestedRange : filter.getTimes()) {
-                        boolean allMatched = requestedRange.stream().allMatch(reqTime ->
-                                course.getTimes().stream().anyMatch(classTime ->
-                                        classTime.getDay().equals(reqTime.getDay()) &&
-                                                classTime.getStartTime().compareTo(reqTime.getStartTime()) >= 0 &&
-                                                classTime.getEndTime().compareTo(reqTime.getEndTime()) <= 0
-                                )
-                        );
-                        if (allMatched) return true;
-                    }
-                    return false;
-                })
-                .toList();
-
-        return filtered.stream()
-                .map(c -> new SearchItemDTO(
-                        c.getSubject(),
-                        c.getNumber(),
-                        c.getSection(),
-                        c.getName(),
-                        c.getCredits(),
-                        c.getId(),
-                        c.getTimes(),
-                        c.getFaculty()))
-                .toList();
+        return new FilterOptionsDTO(semesters, subjects, numbers, credits, faculty);
     }
 
     @Transactional(readOnly = true)
-    public FilterOptionsDTO getFilterOptions() {
-        User cachedUser = securityUtil.getCurrentUser().orElseThrow();
-        User user = userRepository.findById(cachedUser.getId()).orElseThrow();
-
-        Search search = user.getSearch();
-
-        if (search == null) {
-            throw new IllegalStateException("User has no active search");
-        }
-
-        Set<String> subjects = search.getResults().stream()
-                .map(CourseSection::getSubject)
-                .collect(Collectors.toSet());
-
-        Set<Integer> numbers = search.getResults().stream()
-                .map(CourseSection::getNumber)
-                .collect(Collectors.toSet());
-
-        Set<Integer> credits = search.getResults().stream()
-                .map(CourseSection::getCredits)
-                .collect(Collectors.toSet());
-
-        Set<String> faculty = search.getResults().stream()
-                .flatMap(c -> c.getFaculty().stream())
-                .collect(Collectors.toSet());
-
-        Set<List<ClassTime>> times = search.getResults().stream()
-                .map(CourseSection::getTimes)
-                .collect(Collectors.toSet());
-
-        return new FilterOptionsDTO(subjects, numbers, credits, faculty, times);
-    }
-
-
-    @Transactional
     public CourseSectionDTO getCourseDetails(Long id) {
         CourseSection section = courseSectionRepository.findById(id)
                 .orElseThrow(() -> new CourseSectionNotFoundException("Section not found"));

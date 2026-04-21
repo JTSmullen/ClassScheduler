@@ -5,17 +5,27 @@ import com.classScheduler.app.course.entity.CourseSection;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import java.util.List;
+import java.util.Set;
 
 @Repository
-public interface CourseSectionRepository extends JpaRepository<CourseSection, Long> {
+public interface CourseSectionRepository extends JpaRepository<CourseSection, Long>, JpaSpecificationExecutor<CourseSection> {
+    @Query("SELECT DISTINCT c.semester FROM CourseSection c")
+    Set<String> findDistinctSemesters();
 
-    @Query("SELECT c FROM CourseSection c " +
-            "WHERE LOWER(c.name) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-            "OR LOWER(c.subject) LIKE LOWER(CONCAT('%', :keyword, '%'))")
-    List<CourseSection> searchByKeyword(@Param("keyword") String keyword);
+    @Query("SELECT DISTINCT c.subject FROM CourseSection c")
+    Set<String> findDistinctSubjects();
+
+    @Query("SELECT DISTINCT c.number FROM CourseSection c")
+    Set<Integer> findDistinctNumbers();
+
+    @Query("SELECT DISTINCT c.credits FROM CourseSection c")
+    Set<Integer> findDistinctCredits();
+
+    @Query("SELECT DISTINCT f FROM CourseSection c JOIN c.faculty f")
+    Set<String> findDistinctFaculty();
 }
