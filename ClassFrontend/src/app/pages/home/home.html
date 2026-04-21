@@ -5,13 +5,25 @@
 </br> -->
 
 <button (click)="toggleCreate()">Create New Schedule</button>
+
 <div *ngIf="showCreate" class="dropdown">
-  <input
-    type="text"
-    [(ngModel)]="scheduleName"
-    placeholder="Enter schedule name"
-  />
-  <button (click)="createSchedule()">Create</button>
+  <form (submit)="createSchedule($event)">
+    <input
+      type="text"
+      [(ngModel)]="scheduleName"
+      name="scheduleName"
+      placeholder="Enter schedule name"
+      required
+    />
+
+    <button type="submit" [disabled]="loading">
+      {{ loading ? 'Creating...' : 'Create' }}
+    </button>
+  </form>
+
+  <p *ngIf="errorMessage" class="error">
+    {{ errorMessage }}
+  </p>
 </div>
 
 <button routerLink="/schedule">View Schedule</button>
