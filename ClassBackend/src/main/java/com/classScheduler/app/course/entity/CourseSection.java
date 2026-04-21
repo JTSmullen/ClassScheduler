@@ -69,14 +69,16 @@ public class CourseSection {
     @JsonProperty("total_seats")
     private int totalSeats;
 
+    @ElementCollection
+    @CollectionTable(name = "course_faculty", joinColumns = @JoinColumn(name = "section_id"))
+    @Column(name = "faculty")
+    @org.hibernate.annotations.Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
     private List<String> faculty;
 
     @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(
-            name = "section_times",
-            joinColumns = @JoinColumn(name = "section_id")
-    )
+    @CollectionTable(name = "section_times", joinColumns = @JoinColumn(name = "section_id"))
     @Column(name = "time_value")
+    @org.hibernate.annotations.Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
     private List<ClassTime> times;
 
     @ManyToOne
