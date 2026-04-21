@@ -14,7 +14,7 @@ public class CourseSectionSpecification {
     public static Specification<CourseSection> build(SearchFilterDTO filter, Set<String> keywords) {
         return (root, query, cb) -> {
 
-            // ensure no duplicates from the join in faculty
+            // ensure no duplicates from the join in faculty and times
             query.distinct(true);
 
             Predicate predicate = cb.conjunction();

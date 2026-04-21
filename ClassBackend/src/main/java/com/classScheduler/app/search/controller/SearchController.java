@@ -8,6 +8,7 @@ import com.classScheduler.app.search.dto.SearchFilterDTO;
 import com.classScheduler.app.search.dto.FilterOptionsDTO;
 
 import jakarta.validation.Valid;
+import org.apache.coyote.Response;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -43,5 +44,10 @@ public class SearchController {
     // @PathVariable extracts the value from the URL path
     public ResponseEntity<CourseSectionDTO> searchResultDetails(@PathVariable Long id) {
         return ResponseEntity.ok(searchService.getCourseDetails(id));
+    }
+
+    @GetMapping("/filter/options")
+    public ResponseEntity<FilterOptionsDTO> getFilterOptionsDTO() {
+        return ResponseEntity.ok(searchService.buildFilterOptionsDTO());
     }
 }

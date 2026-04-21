@@ -17,6 +17,5 @@ public class FilterOptionsDTO {
     private Set<Integer> numbers;
     private Set<Integer> credits;
     private Set<String> faculty;
-    private Set<List<ClassTime>> times;
 }
 

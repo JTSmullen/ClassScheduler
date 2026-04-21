@@ -45,7 +45,7 @@ public class SearchService {
         this.searchRepository = searchRepository;
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public SearchResponseDTO searchAndFilter(SearchFilterDTO filter, Pageable pageable) {
         Set<String> keywordSet = Optional.ofNullable(filter.getKeyword())
                 .orElse("")
@@ -64,15 +64,11 @@ public class SearchService {
         Page<CourseSection> resultsPage = courseSectionRepository.findAll(spec, pageable);
         Set<CourseSection> results = new HashSet<>(resultsPage.getContent());
 
-        //remove duplicates in db manually
-        Set<CourseSection> uniqueResults = uniqueResults(results);
-
-        // build results and filter options DTOS
-        Set<SearchItemDTO> resultDTOs = buildSearchResultsDTO(uniqueResults);
-        FilterOptionsDTO filterOptions = buildFilterOptionsDTO(uniqueResults);
+        // build results DTO
+        Set<SearchItemDTO> resultsDTO = buildSearchResultsDTO(results);
 
         // return search results and
-        return new SearchResponseDTO(resultDTOs, filterOptions, resultsPage.getNumber(), resultsPage.getTotalPages(), resultsPage.getTotalElements());
+        return new SearchResponseDTO(resultsDTO, resultsPage.getNumber(), resultsPage.getTotalPages(), resultsPage.getTotalElements());
     }
 
     // helper method to build SearchI
@@ -95,52 +91,18 @@ public class SearchService {
         return resultsDTO;
     }
 
-    // Helper method to remove duplicate results included in db
-    private Set<CourseSection> uniqueResults(Set<CourseSection> results) {
-        // explicitly remove duplicate course sections since it seems like there are some duplicates in db
-        Set<CourseSection> uniqueResults = new HashSet<>(results.stream()
-                .collect(Collectors.toMap(
-                        c -> c.getSubject() + "-" + c.getNumber() + "-" + c.getSection(),
-                        c -> c,
-                        (existing, replacement) -> existing // If duplicate found, just keep the first one
-                ))
-                .values());
-        return uniqueResults;
+    @Transactional(readOnly = true)
+    public FilterOptionsDTO buildFilterOptionsDTO() {
+        Set<String> semesters = courseSectionRepository.findDistinctSemesters();
+        Set<String> subjects = courseSectionRepository.findDistinctSubjects();
+        Set<Integer> numbers = courseSectionRepository.findDistinctNumbers();
+        Set<Integer> credits = courseSectionRepository.findDistinctCredits();
+        Set<String> faculty = courseSectionRepository.findDistinctFaculty();
+
+        return new FilterOptionsDTO(semesters, subjects, numbers, credits, faculty);
     }
 
     @Transactional(readOnly = true)
-    public FilterOptionsDTO buildFilterOptionsDTO(Set<CourseSection> sections) {
-
-        Set<String> semesters = sections.stream()
-                .map(CourseSection::getSemester)
-                .collect(Collectors.toSet());
-
-        Set<String> subjects = sections.stream()
-                .map(CourseSection::getSubject)
-                .collect(Collectors.toSet());
-
-        Set<Integer> numbers = sections.stream()
-                .map(CourseSection::getNumber)
-                .collect(Collectors.toSet());
-
-        Set<Integer> credits = sections.stream()
-                .map(CourseSection::getCredits)
-                .collect(Collectors.toSet());
-
-        Set<String> faculty = sections.stream()
-                .filter(c -> c.getFaculty() != null)
-                .flatMap(c -> c.getFaculty().stream())
-                .collect(Collectors.toSet());
-
-        Set<List<ClassTime>> times = sections.stream()
-                .map(CourseSection::getTimes)
-                .collect(Collectors.toSet());
-
-        return new FilterOptionsDTO(semesters, subjects, numbers, credits, faculty, times);
-    }
-
-
-    @Transactional
     public CourseSectionDTO getCourseDetails(Long id) {
         CourseSection section = courseSectionRepository.findById(id)
                 .orElseThrow(() -> new CourseSectionNotFoundException("Section not found"));
