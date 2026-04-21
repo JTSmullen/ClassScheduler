@@ -44,7 +44,7 @@ export class SchedulePage implements OnInit {
   readonly DAYS = DAYS;
   readonly HOURS = HOURS;
 
-  availableSchedules: Schedule[] = [];
+  availableSchedules = signal<Schedule[]>([]);
   scheduleMeta: UserScheduleMeta[] = [];
   loadingSchedules = signal(false);
   errorMessage = signal('');
@@ -59,15 +59,15 @@ export class SchedulePage implements OnInit {
   private emptySchedule: Schedule = { id: 0, name: '', events: [] };
 
   currentSchedule = computed(() =>
-    this.availableSchedules.find(s => s.id === this.selectedScheduleId()) || this.availableSchedules[0] || this.emptySchedule
+    this.availableSchedules().find(s => s.id === this.selectedScheduleId()) || this.availableSchedules()[0] || this.emptySchedule
   );
 
   compareSchedule1 = computed(() =>
-    this.availableSchedules.find(s => s.id === this.compareScheduleIds()[0]) || this.availableSchedules[0] || this.emptySchedule
+    this.availableSchedules().find(s => s.id === this.compareScheduleIds()[0]) || this.availableSchedules()[0] || this.emptySchedule
   );
 
   compareSchedule2 = computed(() =>
-    this.availableSchedules.find(s => s.id === this.compareScheduleIds()[1]) || this.availableSchedules[0] || this.emptySchedule
+    this.availableSchedules().find(s => s.id === this.compareScheduleIds()[1]) || this.availableSchedules()[0] || this.emptySchedule
   );
 
   filteredEvents = computed(() =>
@@ -92,15 +92,15 @@ export class SchedulePage implements OnInit {
 
     const scheduleIds = storedUser.schedules.map((schedule: any) => schedule.id as number);
     if (scheduleIds.length === 0) {
-      this.availableSchedules = [];
+      this.availableSchedules.set([]);
       return;
     }
 
-    this.availableSchedules = storedUser.schedules.map((schedule: any) => ({
+    this.availableSchedules.set(storedUser.schedules.map((schedule: any) => ({
       id: schedule.id,
       name: schedule.name,
       events: [],
-    }));
+    })));
 
     this.selectedScheduleId.set(scheduleIds[0]);
     this.compareScheduleIds.set([
@@ -125,7 +125,7 @@ export class SchedulePage implements OnInit {
       return;
     }
 
-    const hasLoaded = this.availableSchedules.some(
+    const hasLoaded = this.availableSchedules().some(
       schedule => schedule.id === scheduleId && schedule.events.length > 0
     );
     if (hasLoaded) {
@@ -162,12 +162,15 @@ export class SchedulePage implements OnInit {
       ),
     };
 
-    const existingIndex = this.availableSchedules.findIndex(s => s.id === schedule.id);
-    if (existingIndex >= 0) {
-      this.availableSchedules[existingIndex] = schedule;
-    } else {
-      this.availableSchedules.push(schedule);
-    }
+    this.availableSchedules.update(schedules => {
+      const existingIndex = schedules.findIndex(s => s.id === schedule.id);
+      if (existingIndex >= 0) {
+        schedules[existingIndex] = schedule;
+      } else {
+        schedules.push(schedule);
+      }
+      return [...schedules];
+    });
   }
 
   private mapCourseSection(course: BackendCourseSectionDTO): CourseSection {

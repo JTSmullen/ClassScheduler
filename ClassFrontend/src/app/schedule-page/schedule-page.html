@@ -10,7 +10,7 @@
             (change)="onScheduleChange($event)"
             class="schedule-selector"
           >
-            <option *ngFor="let schedule of availableSchedules" [value]="schedule.id">
+            <option *ngFor="let schedule of availableSchedules()" [value]="schedule.id">
               {{ schedule.name }}
             </option>
           </select>
@@ -45,7 +45,7 @@
           (change)="onCompareSchedule1Change($event)"
           class="selector"
         >
-          <option *ngFor="let schedule of availableSchedules" [value]="schedule.id">
+          <option *ngFor="let schedule of availableSchedules()" [value]="schedule.id">
             {{ schedule.name }}
           </option>
         </select>
@@ -55,7 +55,7 @@
           (change)="onCompareSchedule2Change($event)"
           class="selector"
         >
-          <option *ngFor="let schedule of availableSchedules" [value]="schedule.id">
+          <option *ngFor="let schedule of availableSchedules()" [value]="schedule.id">
             {{ schedule.name }}
           </option>
         </select>
