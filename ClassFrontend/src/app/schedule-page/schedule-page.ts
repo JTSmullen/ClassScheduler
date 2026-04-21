@@ -55,6 +55,8 @@ export class SchedulePage implements OnInit {
   selectedCourse = signal<CourseSection | null>(null);
   selectedScheduleId = signal(0);
   compareScheduleIds = signal<[number, number]>([0, 0]);
+  removingCourse = signal(false);
+  removeError = signal('');
 
   private emptySchedule: Schedule = { id: 0, name: '', events: [] };
 
@@ -83,9 +85,8 @@ export class SchedulePage implements OnInit {
 
   ngOnInit() {
     const storedUser = this.getStoredUser();
-    const token = this.getAuthToken();
 
-    if (!token || !storedUser) {
+    if (!storedUser) {
       this.router.navigate(['/login']);
       return;
     }
@@ -119,12 +120,6 @@ export class SchedulePage implements OnInit {
       return;
     }
 
-    const token = this.getAuthToken();
-    if (!token) {
-      this.errorMessage.set('Not authenticated.');
-      return;
-    }
-
     const hasLoaded = this.availableSchedules().some(
       schedule => schedule.id === scheduleId && schedule.events.length > 0
     );
@@ -133,7 +128,7 @@ export class SchedulePage implements OnInit {
     }
 
     this.loadingSchedules.set(true);
-    this.scheduleService.loadSchedule(scheduleId, token).subscribe({
+    this.scheduleService.loadSchedule(scheduleId).subscribe({
       next: (scheduleDto) => {
         this.updateScheduleFromDto(scheduleDto);
         this.loadingSchedules.set(false);
@@ -219,13 +214,6 @@ export class SchedulePage implements OnInit {
     return palette[index % palette.length];
   }
 
-  private getAuthToken(): string | null {
-    if (typeof window === 'undefined') {
-      return null;
-    }
-    return localStorage.getItem('auth_token');
-  }
-
   private getStoredUser() {
     if (typeof window === 'undefined') {
       return null;
@@ -297,5 +285,36 @@ export class SchedulePage implements OnInit {
 
   clearSearch() {
     this.searchQuery.set('');
+  }
+
+  removeCourse() {
+    const course = this.selectedCourse();
+    if (!course) {
+      return;
+    }
+
+    const scheduleId = this.selectedScheduleId();
+    this.removingCourse.set(true);
+    this.removeError.set('');
+
+    this.scheduleService.removeCourse(scheduleId, course.id).subscribe({
+      next: () => {
+        // Remove the course from the current schedule
+        this.availableSchedules.update(schedules => {
+          const schedule = schedules.find(s => s.id === scheduleId);
+          if (schedule) {
+            schedule.events = schedule.events.filter(event => event.courseSection.id !== course.id);
+          }
+          return [...schedules];
+        });
+        this.removingCourse.set(false);
+        this.closeDialog();
+      },
+      error: (error) => {
+        console.error('Unable to remove course:', error);
+        this.removeError.set('Failed to remove course. Please try again.');
+        this.removingCourse.set(false);
+      },
+    });
   }
 }

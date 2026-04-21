@@ -43,8 +43,11 @@ export class ScheduleService {
 
   constructor(private http: HttpClient) {}
 
-  loadSchedule(scheduleId: number, token: string): Observable<ScheduleDTO> {
-    const headers = new HttpHeaders({ Authorization: `Bearer ${token}` });
-    return this.http.post<ScheduleDTO>(`${this.SCHEDULE_URL}/load`, { id: scheduleId }, { headers });
+  loadSchedule(scheduleId: number): Observable<ScheduleDTO> {
+    return this.http.post<ScheduleDTO>(`${this.SCHEDULE_URL}/load`, { id: scheduleId });
+  }
+
+  removeCourse(scheduleId: number, courseId: number): Observable<any> {
+    return this.http.post<any>(`${this.SCHEDULE_URL}/remove`, { schedule_id: scheduleId, course_id: courseId });
   }
 }

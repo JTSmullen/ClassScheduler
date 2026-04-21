@@ -39,14 +39,9 @@ export class Home {
     this.loading = true;
 
     const newSchedule = { name: this.scheduleName };
-    const token = localStorage.getItem('auth_token');
 
     this.http
-      .post<any>(
-        'http://localhost:8080/api/v1/schedule/create',
-        newSchedule,
-        token ? { headers: { Authorization: `Bearer ${token}` } } : {}
-      )
+      .post<any>('http://localhost:8080/api/v1/schedule/create', newSchedule)
       .subscribe({
         next: (response) => {
           console.log('Created:', response);
@@ -54,9 +49,35 @@ export class Home {
           this.showCreate = false;
           this.scheduleName = '';
 
-          if (response?.id) {
-            this.router.navigate(['/schedule']);
-          }
+          // Refresh user info to include the new schedule
+          this.authService.fetchUserInfo().subscribe({
+            next: (user: UserInfo) => {
+              // Get existing user data to preserve username
+              const existingUser = JSON.parse(localStorage.getItem('current_user') || '{}');
+              
+              localStorage.setItem(
+                'current_user',
+                JSON.stringify({
+                  id: user.id,
+                  username: existingUser.username || '',
+                  name: user.name,
+                  firstName: user.firstName,
+                  schedules: user.schedules,
+                })
+              );
+
+              if (response?.id) {
+                this.router.navigate(['/schedule']);
+              }
+            },
+            error: (fetchError) => {
+              console.error('Failed to refresh user info after schedule creation:', fetchError);
+              // Still navigate to schedule even if user info refresh fails
+              if (response?.id) {
+                this.router.navigate(['/schedule']);
+              }
+            },
+          });
         },
         error: (error) => {
           this.loading = false;
@@ -81,7 +102,7 @@ export class Home {
         next: (response) => {
           localStorage.setItem('auth_token', response.token);
 
-          this.authService.fetchUserInfo(response.token).subscribe({
+          this.authService.fetchUserInfo().subscribe({
             next: (user: any) => {
               localStorage.setItem(
                 'current_user',

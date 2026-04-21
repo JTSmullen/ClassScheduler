@@ -266,6 +266,16 @@
         </div>
       </div>
       <div class="dialog-footer">
+        <div *ngIf="removeError()" class="error-message">
+          {{ removeError() }}
+        </div>
+        <button 
+          class="remove-btn" 
+          (click)="removeCourse()"
+          [disabled]="removingCourse()"
+        >
+          {{ removingCourse() ? 'Removing...' : 'Remove from Schedule' }}
+        </button>
         <button class="close-btn" (click)="closeDialog()">Close</button>
       </div>
     </div>

@@ -37,8 +37,7 @@ export class AuthService {
     return this.http.post<LoginResponse>(`${this.AUTH_URL}/login`, payload);
   }
 
-  fetchUserInfo(token: string): Observable<UserInfo> {
-    const headers = new HttpHeaders({ Authorization: `Bearer ${token}` });
-    return this.http.get<UserInfo>(this.USER_URL, { headers });
+  fetchUserInfo(): Observable<UserInfo> {
+    return this.http.get<UserInfo>(this.USER_URL);
   }
 }
