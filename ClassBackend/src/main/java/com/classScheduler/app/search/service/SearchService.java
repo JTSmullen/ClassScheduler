@@ -64,33 +64,12 @@ public class SearchService {
         Page<CourseSection> resultsPage = courseSectionRepository.findAll(spec, pageable);
         Set<CourseSection> results = new HashSet<>(resultsPage.getContent());
 
-        // manually apply time filters
-        List<CourseSection> filteredList = results.stream()
-                .filter(course -> {
-                    if (filter.getTimes() == null || filter.getTimes().isEmpty()) return true;
-
-                    for (List<ClassTime> requestedRange : filter.getTimes()) {
-                        boolean allMatched = requestedRange.stream().allMatch(reqTime ->
-                                course.getTimes().stream().anyMatch(classTime ->
-                                        classTime.getDay().equals(reqTime.getDay()) &&
-                                                classTime.getStartTime().compareTo(reqTime.getStartTime()) >= 0 &&
-                                                classTime.getEndTime().compareTo(reqTime.getEndTime()) <= 0
-                                )
-                        );
-                        if (allMatched) return true;
-                    }
-                    return false;
-                })
-                .toList();
-
-        Set<CourseSection> filtered = new HashSet<>(filteredList);
-
-        //remove duplicates
-        Set<CourseSection> uniqueFiltered = uniqueResults(filtered);
+        //remove duplicates in db manually
+        Set<CourseSection> uniqueResults = uniqueResults(results);
 
         // build results and filter options DTOS
-        Set<SearchItemDTO> resultDTOs = buildSearchResultsDTO(uniqueFiltered);
-        FilterOptionsDTO filterOptions = buildFilterOptionsDTO(uniqueFiltered);
+        Set<SearchItemDTO> resultDTOs = buildSearchResultsDTO(uniqueResults);
+        FilterOptionsDTO filterOptions = buildFilterOptionsDTO(uniqueResults);
 
         // return search results and
         return new SearchResponseDTO(resultDTOs, filterOptions, resultsPage.getNumber(), resultsPage.getTotalPages(), resultsPage.getTotalElements());
