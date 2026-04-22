@@ -1,29 +1,42 @@
-<h1>Welcome to the Home Page</h1>
-<p>Checkout these buttons:</p>
-
-<!-- <br>
-</br> -->
-
-<button (click)="toggleCreate()">Create New Schedule</button>
-
-<div *ngIf="showCreate" class="dropdown">
-  <form (submit)="createSchedule($event)">
-    <input
-      type="text"
-      [(ngModel)]="scheduleName"
-      name="scheduleName"
-      placeholder="Enter schedule name"
-      required
-    />
-
-    <button type="submit" [disabled]="loading">
-      {{ loading ? 'Creating...' : 'Create' }}
+<div class="home-container">
+  <div class="logout-container">
+    <button class="btn btn-outline">
+      Logout
     </button>
-  </form>
+  </div>
 
-  <p *ngIf="errorMessage" class="error">
-    {{ errorMessage }}
-  </p>
+  <div class="content-card">
+    <h1>Welcome to the Home Page</h1>
+    <p>Checkout these buttons:</p>
+
+    <div class="button-group">
+      <button class="btn btn-outline" (click)="toggleCreate()">
+        Create New Schedule
+      </button>
+
+      <button class="btn btn-primary" routerLink="/schedule">
+        View Schedule
+      </button>
+    </div>
+
+    <div *ngIf="showCreate" class="create-dropdown">
+      <form (submit)="createSchedule($event)">
+        <input
+          type="text"
+          [(ngModel)]="scheduleName"
+          name="scheduleName"
+          placeholder="Enter schedule name"
+          required
+        />
+
+        <button type="submit" class="btn btn-primary" [disabled]="loading">
+          {{ loading ? 'Creating...' : 'Create' }}
+        </button>
+      </form>
+
+      <p *ngIf="errorMessage" class="error">
+        {{ errorMessage }}
+      </p>
+    </div>
+  </div>
 </div>
-
-<button routerLink="/schedule">View Schedule</button>
