@@ -2,9 +2,11 @@ import { Component, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { LucideAngularModule, ArrowLeftRight, Search, X, BookOpen, Calendar, MapPin, User, Clock, Users } from 'lucide-angular';
+import { LucideAngularModule, ArrowLeftRight, Search, X, BookOpen, Calendar, MapPin, User, Clock, Users, Plus } from 'lucide-angular';
 import { WeekGridComponent } from './week-grid.component';
 import { ScheduleService, ScheduleDTO, BackendCourseSectionDTO, BackendCourseTime } from './schedule.service';
+import { CourseSearchComponent } from './course-search.component';
+import { SearchService, SearchItemDTO, CourseSectionDTO } from './search.service';
 import { CourseSection, Schedule, ScheduleEvent } from './models';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
@@ -26,7 +28,7 @@ interface UserScheduleMeta {
 @Component({
   selector: 'app-schedule-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule, WeekGridComponent],
+  imports: [CommonModule, FormsModule, LucideAngularModule, WeekGridComponent, CourseSearchComponent],
   templateUrl: './schedule-page.html',
   styleUrl: './schedule-page.sass',
 })
@@ -40,6 +42,7 @@ export class SchedulePage implements OnInit {
   readonly User = User;
   readonly Clock = Clock;
   readonly Users = Users;
+  readonly Plus = Plus;
 
   readonly DAYS = DAYS;
   readonly HOURS = HOURS;
@@ -57,6 +60,12 @@ export class SchedulePage implements OnInit {
   compareScheduleIds = signal<[number, number]>([0, 0]);
   removingCourse = signal(false);
   removeError = signal('');
+
+  searchPanelOpen = signal(false);
+  selectedSearchCourse = signal<CourseSectionDTO | null>(null);
+  showCourseDetails = signal(false);
+  addingCourse = signal(false);
+  addCourseError = signal('');
 
   private emptySchedule: Schedule = { id: 0, name: '', events: [] };
 
@@ -81,7 +90,7 @@ export class SchedulePage implements OnInit {
     )
   );
 
-  constructor(private router: Router, private scheduleService: ScheduleService) {}
+  constructor(private router: Router, private scheduleService: ScheduleService, private searchService: SearchService) {}
 
   ngOnInit() {
     const storedUser = this.getStoredUser();
@@ -236,6 +245,14 @@ export class SchedulePage implements OnInit {
     return `${hour} AM`;
   }
 
+  parseTimeFromString(time: string | { hour: number; minute: number }): { hour: number; minute: number } {
+    if (typeof time === 'string') {
+      const [hour, minute] = time.split(':').map(Number);
+      return { hour, minute };
+    }
+    return time;
+  }
+
   getEventPosition(event: ScheduleEvent) {
     const top = ((event.startHour - 7) * 60 + event.startMinute) / 60;
     const height = event.durationMinutes / 60;
@@ -285,6 +302,72 @@ export class SchedulePage implements OnInit {
 
   clearSearch() {
     this.searchQuery.set('');
+  }
+
+  openSearchPanel() {
+    this.searchPanelOpen.set(true);
+  }
+
+  closeSearchPanel() {
+    this.searchPanelOpen.set(false);
+  }
+
+  onSearchCourseSelected(course: SearchItemDTO) {
+    // Fetch full course details
+    this.searchService.getCourseDetails(course.id).subscribe({
+      next: (courseDetails) => {
+        this.selectedSearchCourse.set(courseDetails);
+        this.showCourseDetails.set(true);
+        this.searchPanelOpen.set(false);
+      },
+      error: (error) => {
+        console.error('Failed to fetch course details:', error);
+        this.addCourseError.set('Failed to load course details');
+      },
+    });
+  }
+
+  onSearchPanelClosed() {
+    this.closeSearchPanel();
+  }
+
+  closeCourseDetails() {
+    this.selectedSearchCourse.set(null);
+    this.showCourseDetails.set(false);
+    this.addCourseError.set('');
+  }
+
+  addCourseToSchedule() {
+    const course = this.selectedSearchCourse();
+    if (!course) {
+      return;
+    }
+
+    const scheduleId = this.selectedScheduleId();
+    this.addingCourse.set(true);
+    this.addCourseError.set('');
+
+    this.scheduleService.addCourse(scheduleId, course.id).subscribe({
+      next: () => {
+        // Clear the schedule events to force a reload
+        this.availableSchedules.update(schedules => {
+          const schedule = schedules.find(s => s.id === scheduleId);
+          if (schedule) {
+            schedule.events = [];
+          }
+          return [...schedules];
+        });
+        // Reload the schedule details to fetch fresh data
+        this.loadScheduleDetails(scheduleId);
+        this.addingCourse.set(false);
+        this.closeCourseDetails();
+      },
+      error: (error) => {
+        console.error('Unable to add course:', error);
+        this.addCourseError.set('Failed to add course. Please check for scheduling conflicts.');
+        this.addingCourse.set(false);
+      },
+    });
   }
 
   removeCourse() {
