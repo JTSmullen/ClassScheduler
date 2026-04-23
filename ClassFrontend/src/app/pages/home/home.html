@@ -1,21 +1,34 @@
 <div class="home-container">
-  <div class="logout-container">
-    <button class="btn btn-outline">
-      Logout
-    </button>
-  </div>
+  <header class="header-wrapper">
+    <div class="welcome-section">
+      <h1>Welcome to the Home Page</h1>
+      <p>Checkout these buttons:</p>
+    </div>
 
-  <div class="content-card">
-    <h1>Welcome to the Home Page</h1>
-    <p>Checkout these buttons:</p>
+    <div class="logout-container">
+      <button class="btn btn-logout" (click)="logout()">
+        Logout
+      </button>
+    </div>
+  </header>
+
+  <main class="content-card">
+    <div class="schedule-section" *ngIf="schedules().length > 0">
+      <h3 class="section-title">Your Schedules</h3>
+      <div class="schedule-grid">
+        <button 
+          *ngFor="let s of schedules()" 
+          class="btn btn-schedule-card"
+          (click)="navigateToSchedule(s.id)">
+          <span class="schedule-name">{{ s.name }}</span>
+          <span class="view-label">View Details →</span>
+        </button>
+      </div>
+    </div>
 
     <div class="button-group">
       <button class="btn btn-outline" (click)="toggleCreate()">
-        Create New Schedule
-      </button>
-
-      <button class="btn btn-primary" routerLink="/schedule">
-        View Schedule
+        {{ showCreate ? 'Cancel' : '+ Create New Schedule' }}
       </button>
     </div>
 
@@ -29,7 +42,7 @@
           required
         />
 
-        <button type="submit" class="btn btn-primary" [disabled]="loading">
+        <button type="submit" class="btn btn-primary" [disabled]="loading || !scheduleName">
           {{ loading ? 'Creating...' : 'Create' }}
         </button>
       </form>
@@ -38,5 +51,5 @@
         {{ errorMessage }}
       </p>
     </div>
-  </div>
+  </main>
 </div>
