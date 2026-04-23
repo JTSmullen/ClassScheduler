@@ -50,4 +50,8 @@ export class ScheduleService {
   removeCourse(scheduleId: number, courseId: number): Observable<any> {
     return this.http.post<any>(`${this.SCHEDULE_URL}/remove`, { schedule_id: scheduleId, course_id: courseId });
   }
+
+  addCourse(scheduleId: number, courseId: number): Observable<ScheduleDTO> {
+    return this.http.post<ScheduleDTO>(`${this.SCHEDULE_URL}/add`, { schedule_id: scheduleId, course_id: courseId });
+  }
 }

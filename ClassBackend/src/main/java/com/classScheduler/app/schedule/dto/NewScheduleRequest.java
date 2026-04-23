@@ -9,5 +9,6 @@ import lombok.Setter;
 public class NewScheduleRequest {
 
     private String name;
+    private String semester;
 
 }

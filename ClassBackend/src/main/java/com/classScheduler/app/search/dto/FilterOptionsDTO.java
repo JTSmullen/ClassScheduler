@@ -12,10 +12,10 @@ import java.util.Set;
 @Setter
 @AllArgsConstructor
 public class FilterOptionsDTO {
+    private Set<String> semester;
     private Set<String> subjects;
     private Set<Integer> numbers;
     private Set<Integer> credits;
     private Set<String> faculty;
-    private Set<List<ClassTime>> times;
 }
 
