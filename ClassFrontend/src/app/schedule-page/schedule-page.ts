@@ -8,6 +8,7 @@ import { ScheduleService, ScheduleDTO, BackendCourseSectionDTO, BackendCourseTim
 import { CourseSearchComponent } from './course-search.component';
 import { SearchService, SearchItemDTO, CourseSectionDTO } from './search.service';
 import { CourseSection, Schedule, ScheduleEvent } from './models';
+import { ActivatedRoute } from '@angular/router'
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 const HOURS = Array.from({ length: 15 }, (_, i) => i + 7); // 7am to 9pm
@@ -90,7 +91,7 @@ export class SchedulePage implements OnInit {
     )
   );
 
-  constructor(private router: Router, private scheduleService: ScheduleService, private searchService: SearchService) {}
+  constructor(private router: Router, private scheduleService: ScheduleService, private searchService: SearchService, private route: ActivatedRoute) {}
 
   ngOnInit() {
     const storedUser = this.getStoredUser();
@@ -99,6 +100,27 @@ export class SchedulePage implements OnInit {
       this.router.navigate(['/login']);
       return;
     }
+
+    // 3. Listen for the ID in the URL
+  this.route.queryParams.subscribe(params => {
+    const urlId = params['id'] ? parseInt(params['id']) : null;
+    
+    // Fallback: If no ID in URL, use the first one from localStorage
+    const defaultId = storedUser.schedules.length > 0 ? storedUser.schedules[0].id : 0;
+    const targetId = urlId || defaultId;
+
+    // Set the signals
+    this.availableSchedules.set(storedUser.schedules.map((s: any) => ({
+      id: s.id,
+      name: s.name,
+      events: [],
+    })));
+
+    this.selectedScheduleId.set(targetId);
+    
+    // 4. Load the specific schedule details
+    this.loadScheduleDetails(targetId);
+  });
 
     const scheduleIds = storedUser.schedules.map((schedule: any) => schedule.id as number);
     if (scheduleIds.length === 0) {
@@ -112,7 +134,7 @@ export class SchedulePage implements OnInit {
       events: [],
     })));
 
-    this.selectedScheduleId.set(scheduleIds[0]);
+    // this.selectedScheduleId.set(scheduleIds[0]);
     this.compareScheduleIds.set([
       scheduleIds[0],
       scheduleIds.length > 1 ? scheduleIds[1] : scheduleIds[0],
