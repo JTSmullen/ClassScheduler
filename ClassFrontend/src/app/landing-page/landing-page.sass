@@ -1,0 +1,152 @@
+:host
+  --primary: #18181b
+  --primary-foreground: #ffffff
+  --muted-text: #71717a
+  --muted-bg: #f4f4f5
+  --border-color: #e4e4e7
+  display: block
+  font-family: sans-serif
+
+.page-wrapper
+  display: flex
+  flex-direction: column
+  min-height: 100vh
+
+.container
+  max-width: 1100px
+  margin: 0 auto
+  padding: 0 2rem
+
+.text-center
+  text-align: center
+
+/* Header */
+.site-header
+  position: sticky
+  top: 0
+  z-index: 100
+  background: white
+  border-bottom: 1px solid var(--border-color)
+  padding: 1rem 0
+
+.header-content
+  display: flex
+  justify-content: space-between
+  align-items: center
+
+.logo
+  display: flex
+  align-items: center
+  gap: 0.5rem
+  font-weight: 700
+  font-size: 1.25rem
+
+.header-actions
+  display: flex
+  gap: 1rem
+
+/* Hero */
+.hero
+  padding: 6rem 0
+
+.hero-title
+  font-size: 3.5rem
+  font-weight: 800
+  line-height: 1.2
+  margin-bottom: 1.5rem
+
+.highlight
+  color: #555
+
+.hero-description
+  font-size: 1.25rem
+  color: var(--muted-text)
+  max-width: 600px
+  margin: 0 auto 2.5rem
+
+.hero-btns
+  display: flex
+  justify-content: center
+  gap: 1rem
+
+/* Features */
+.features
+  background-color: var(--muted-bg)
+  padding: 5rem 0
+
+.section-title
+  text-align: center
+  font-size: 2rem
+  margin-bottom: 3rem
+
+.bottom-cta
+  padding: 6rem 0
+  background: white
+
+.cta-description
+  color: var(--muted-text)
+  font-size: 1.1rem
+  max-width: 700px
+  margin: 1rem auto 2rem
+
+.feature-grid
+  display: grid
+  grid-template-columns: repeat(3, 1fr)
+  gap: 2rem
+
+@media (max-width: 768px)
+  .feature-grid
+    grid-template-columns: 1fr
+
+.feature-card
+  background: white
+  padding: 2rem
+  border-radius: 0.75rem
+  border: 1px solid var(--border-color)
+
+.icon-wrapper
+  width: 40px
+  height: 40px
+  background: #eee
+  display: flex
+  align-items: center
+  justify-content: center
+  border-radius: 6px
+  margin-bottom: 1rem
+
+.icon-small
+  width: 20px
+  height: 20px
+
+/* Footer */
+.site-footer
+  margin-top: auto
+  padding: 2rem 0
+  border-top: 1px solid var(--border-color)
+  text-align: center
+  color: var(--muted-text)
+
+/* Buttons */
+.btn
+  text-decoration: none
+  padding: 0.5rem 1rem
+  border-radius: 0.4rem
+  font-size: 0.9rem
+  font-weight: 500
+  display: inline-flex
+  transition: background 0.2s
+
+.btn-primary
+  background: var(--primary)
+  color: white
+
+.btn-outline
+  border: 1px solid var(--border-color)
+  color: black
+
+.btn-ghost
+  color: black
+
+.btn-lg
+  padding: 0.8rem 2rem
+  font-size: 1rem

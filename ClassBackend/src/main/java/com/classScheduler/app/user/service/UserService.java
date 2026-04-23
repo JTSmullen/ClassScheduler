@@ -32,7 +32,8 @@ public class UserService {
                 .stream()
                 .map(schedule -> new UserScheduleDTO(
                         schedule.getName(),
-                        schedule.getId()
+                        schedule.getId(),
+                        schedule.getLastSave()
                 ))
                 .toList();
 
