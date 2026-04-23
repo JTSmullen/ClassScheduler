@@ -2,7 +2,7 @@ import { Component, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { LucideAngularModule, ArrowLeftRight, Search, X, BookOpen, Calendar, MapPin, User, Clock, Users, Plus } from 'lucide-angular';
+import { LucideAngularModule, ArrowLeftRight, Search, X, BookOpen, Calendar, MapPin, User, Clock, Users, Plus, ChevronLeft } from 'lucide-angular';
 import { WeekGridComponent } from './week-grid.component';
 import { ScheduleService, ScheduleDTO, BackendCourseSectionDTO, BackendCourseTime } from './schedule.service';
 import { CourseSearchComponent } from './course-search.component';
@@ -44,6 +44,7 @@ export class SchedulePage implements OnInit {
   readonly Clock = Clock;
   readonly Users = Users;
   readonly Plus = Plus;
+  readonly ChevronLeft = ChevronLeft;
 
   readonly DAYS = DAYS;
   readonly HOURS = HOURS;
@@ -92,6 +93,10 @@ export class SchedulePage implements OnInit {
   );
 
   constructor(private router: Router, private scheduleService: ScheduleService, private searchService: SearchService, private route: ActivatedRoute) {}
+
+  goBack() {
+    this.router.navigate(['/home']);
+  }
 
   ngOnInit() {
     const storedUser = this.getStoredUser();
