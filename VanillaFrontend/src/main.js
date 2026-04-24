@@ -17,6 +17,7 @@ import {
   searchCourses,
   setAuthToken,
 } from './services.js';
+import { renderRecommendationScreen } from './recommendations.js';
 
 // ################## SHARED STATE AND UI HELPERS ##################
 
@@ -88,18 +89,6 @@ const state = {
 if (state.token) {
   setAuthToken(state.token);
 }
-
-// TODO (MVP work for you, about 4.0 hours total):
-// 1. 1.5h: Expand the backend search endpoint so users can begin with structured search inputs instead of needing an initial keyword search first.
-// 2. 1.0h: Add backend support for availability / open-seat filtering if your team wants that in the MVP.
-// 3. 0.75h: Enforce conflict rejection on the backend's add-course endpoint so conflicting classes cannot be added from any client.
-// 4. 0.75h: Manually test the full MVP flow and tighten edge-case messages based on what you observe in the browser.
-
-// TODO (post-MVP, do not count toward the 4.0 hours above):
-// 1. Migrate this UI to React components once the API contract is stable.
-// 2. Add a richer structured backend search endpoint so users can start from filters instead of a keyword-first flow.
-// 3. Add multi-schedule switching and comparison once the team agrees on UX.
-// 4. Add drag-to-resize or drag-to-reorder interactions in the calendar.
 
 // Return a safe array so the UI never crashes on null or undefined collections.
 // Backend data is not always guaranteed to be present, so this works like a defensive helper.
@@ -686,7 +675,7 @@ async function handleApplyFilters() {
 
 // Reset the whole search flow so the user returns to Step 1 only.
 // Here we replace the nested searchDraft object with a brand new clean object.
-function handleClearSearchState() {
+function x () {
   state.hasAttemptedSearch = false;
   state.hasCompletedSearch = false;
   state.rawSearchResults = [];
@@ -771,6 +760,14 @@ function handleLogout() {
   state.selectedScheduleId = '';
   clearAuthToken();
   renderApp();
+}
+
+function openRecommendationRoute() {
+  window.location.hash = 'recommendations';
+}
+
+function isRecommendationRoute() {
+  return window.location.hash.replace('#', '').trim().toLowerCase() === 'recommendations';
 }
 
 // ################## SCREEN RENDERING ##################
@@ -898,6 +895,12 @@ function renderAuthScreen() {
     renderApp();
   });
   panel.appendChild(toggle);
+
+  const recommendationButton = document.createElement('button');
+  recommendationButton.className = 'link-button';
+  recommendationButton.textContent = 'Open class recommendation page';
+  recommendationButton.addEventListener('click', openRecommendationRoute);
+  panel.appendChild(recommendationButton);
 
   app.appendChild(shell);
 }
@@ -1374,11 +1377,21 @@ function renderMainScreen() {
   subtitle.textContent = 'Search courses, build a candidate schedule, and view it in a weekly calendar.';
   titleBlock.appendChild(subtitle);
 
+  const headerActions = document.createElement('div');
+  headerActions.className = 'header-actions';
+  header.appendChild(headerActions);
+
+  const recommendationButton = document.createElement('button');
+  recommendationButton.className = 'button button--secondary';
+  recommendationButton.textContent = 'Class recommendations';
+  recommendationButton.addEventListener('click', openRecommendationRoute);
+  headerActions.appendChild(recommendationButton);
+
   const logoutButton = document.createElement('button');
   logoutButton.className = 'button button--ghost';
   logoutButton.textContent = 'Log out';
   logoutButton.addEventListener('click', handleLogout);
-  header.appendChild(logoutButton);
+  headerActions.appendChild(logoutButton);
 
   const error = document.createElement('div');
   error.id = 'error';
@@ -1416,6 +1429,18 @@ function renderMainScreen() {
 // Pick the correct screen based on whether the user is authenticated.
 // This acts like a very small router or screen controller.
 function renderApp() {
+  if (isRecommendationRoute()) {
+    clearApp();
+
+    const app = document.getElementById('app');
+    renderRecommendationScreen({
+      app,
+      isAuthenticated: Boolean(state.token),
+      renderApp,
+    });
+    return;
+  }
+
   if (state.token) {
     renderMainScreen();
     return;
@@ -1427,5 +1452,6 @@ function renderApp() {
 // Start the frontend once the DOM exists.
 // DOMContentLoaded means the initial HTML has been parsed and the page is ready for JS.
 document.addEventListener('DOMContentLoaded', () => {
+  window.addEventListener('hashchange', renderApp);
   renderApp();
 });

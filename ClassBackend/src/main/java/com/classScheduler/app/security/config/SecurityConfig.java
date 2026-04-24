@@ -85,9 +85,11 @@ public class SecurityConfig {
                 "http://localhost:63342",
                 "http://localhost:3000",
                 "http://localhost:5500",
+                "http://localhost:4200",
                 "http://127.0.0.1:63342",
                 "http://127.0.0.1:3000",
                 "http://127.0.0.1:5500",
+                "http://120.0.0.1:4200",
                 "https://main.d2lnb6qcxminz1.amplifyapp.com"
         ));
 

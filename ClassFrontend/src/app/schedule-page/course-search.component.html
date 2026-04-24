@@ -1,0 +1,115 @@
+<div class="course-search-container">
+  <div class="search-header">
+    <h2>Find and Add Courses</h2>
+    <button class="close-btn" (click)="close()">
+      <lucide-icon [img]="X"></lucide-icon>
+    </button>
+  </div>
+
+  <div class="search-content">
+    <!-- Search Bar + Pagination -->
+    <div class="search-bar">
+      <lucide-icon [img]="Search" class="search-icon"></lucide-icon>
+      <input
+        type="text"
+        placeholder="Search courses by keyword..."
+        [value]="searchQuery()"
+        (input)="searchQuery.set($any($event.target).value); onSearchInput()"
+      />
+
+      <!-- Pagination Controls Inside Bar -->
+      <div class="pagination-controls" *ngIf="totalPages() > 0">
+        <button 
+          (click)="prevPage()" 
+          [disabled]="currentPage() === 0" 
+          class="page-btn"
+        >
+          <lucide-icon [img]="ChevronUp"></lucide-icon>
+        </button>
+        
+        <span class="page-indicator">
+          {{ currentPage() + 1 }} / {{ totalPages() }}
+        </span>
+
+        <button 
+          (click)="nextPage()" 
+          [disabled]="currentPage() >= totalPages() - 1" 
+          class="page-btn"
+        >
+          <lucide-icon [img]="ChevronDown"></lucide-icon>
+        </button>
+      </div>
+
+      <button *ngIf="searchQuery()" (click)="searchQuery.set(''); onSearchInput()" class="clear-btn">
+        <lucide-icon [img]="X"></lucide-icon>
+      </button>
+    </div>
+
+    <div class="search-main">
+      <!-- Filters Sidebar -->
+      <div class="filters-panel">
+        <div class="filters-header">
+          <h3>Filters</h3>
+          <button *ngIf="activeFilterCount() > 0" class="clear-filters-btn" (click)="clearFilters()">
+            Clear ({{ activeFilterCount() }})
+          </button>
+        </div>
+
+        <ng-container *ngTemplateOutlet="filterGrp; context: { id: 'semesters', label: 'Semester', options: filterOptions()?.semester }"></ng-container>
+        <ng-container *ngTemplateOutlet="filterGrp; context: { id: 'subjects', label: 'Subject', options: filterOptions()?.subjects }"></ng-container>
+        <ng-container *ngTemplateOutlet="filterGrp; context: { id: 'numbers', label: 'Course Number', options: filterOptions()?.numbers }"></ng-container>
+        <ng-container *ngTemplateOutlet="filterGrp; context: { id: 'credits', label: 'Credits', options: filterOptions()?.credits, suffix: ' CR' }"></ng-container>
+        <ng-container *ngTemplateOutlet="filterGrp; context: { id: 'faculty', label: 'Faculty', options: filterOptions()?.faculty }"></ng-container>
+      </div>
+
+      <!-- Results Display -->
+      <div class="results-panel">
+        <div class="results-header">
+          <h3>Results ({{ searchResults().length }})</h3>
+        </div>
+
+        <div *ngIf="isLoading()" class="loading">
+          <p>Loading courses...</p>
+        </div>
+
+        <div *ngIf="!isLoading() && searchResults().length === 0" class="no-results">
+          <p>No courses found. Try adjusting your filters.</p>
+        </div>
+
+        <div class="results-list" *ngIf="!isLoading()">
+          <div *ngFor="let course of searchResults()" class="result-item" (click)="selectCourse(course)">
+            <div class="course-header">
+              <div class="course-title">{{ course.subject }} {{ course.number }}</div>
+              <div class="course-credits">{{ course.credits }} CR</div>
+            </div>
+            <div class="course-name">{{ course.name }}</div>
+            <div class="course-section">Section {{ course.section }}</div>
+            <div class="course-faculty" *ngIf="course.faculty?.length">
+              <span class="label">Faculty:</span> {{ course.faculty.join(', ') }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Template for Filter Categories -->
+<ng-template #filterGrp let-id="id" let-label="label" let-options="options" let-suffix="suffix">
+  <div class="filter-group">
+    <button class="filter-title" (click)="toggleFilter(id)">
+      <span>{{ label }}</span>
+      <lucide-icon [img]="expandedFilters().has(id) ? ChevronUp : ChevronDown"></lucide-icon>
+    </button>
+    <div *ngIf="expandedFilters().has(id)" class="filter-options">
+      <label *ngFor="let opt of options || []" class="filter-option">
+        <input 
+          type="checkbox" 
+          [checked]="isFilterSelected(id, opt)" 
+          (change)="toggleFilterOption(id, opt)" 
+        />
+        <span>{{ opt }}{{ suffix || '' }}</span>
+      </label>
+    </div>
+  </div>
+</ng-template>
