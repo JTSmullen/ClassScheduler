@@ -33,10 +33,31 @@
   border-radius: 10px
   padding: 1rem
 
+.eyebrow
+  display: block
+  margin-bottom: 0.25rem
+  font-size: 0.75rem
+  font-weight: 700
+  letter-spacing: 0.08em
+  text-transform: uppercase
+  color: #64748b
+
 // Request form layout and field styles.
 .form-panel
   display: grid
   gap: 0.75rem
+
+.form-intro
+  display: grid
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr))
+  gap: 0.75rem
+  padding: 0.9rem
+  border-radius: 10px
+  background: linear-gradient(135deg, #eff6ff, #f8fafc)
+  border: 1px solid #bfdbfe
+
+  strong
+    color: #0f172a
 
   label
     font-weight: 600
@@ -109,6 +130,72 @@
     margin: 0
     padding-left: 1.25rem
 
+.results-subtitle
+  margin-top: 0
+  color: #475569
+
+.results-overview
+  display: grid
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr))
+  gap: 0.75rem
+  margin-bottom: 1rem
+
+.overview-card
+  padding: 1rem
+  border-radius: 10px
+  border: 1px solid #dbe4f0
+  background: #f8fafc
+
+  strong
+    display: block
+    margin-bottom: 0.35rem
+    font-size: 1.35rem
+    color: #0f172a
+
+  p
+    margin: 0
+    color: #475569
+
+.overview-card-status
+  background: linear-gradient(135deg, #ecfdf5, #f8fafc)
+  border-color: #86efac
+
+.overview-card-risk
+  background: linear-gradient(135deg, #fef2f2, #fff7ed)
+  border-color: #fca5a5
+
+.section-heading
+  display: flex
+  align-items: flex-end
+  justify-content: space-between
+  gap: 1rem
+  margin: 1rem 0 0.75rem
+
+  h3
+    margin: 0
+
+  p
+    margin: 0.25rem 0 0
+    color: #64748b
+
+.section-count
+  white-space: nowrap
+  font-weight: 700
+  color: #1e3a8a
+
+.empty-state
+  padding: 1rem
+  border-radius: 10px
+  background: #f8fafc
+  border: 1px dashed #94a3b8
+
+  h3
+    margin: 0 0 0.35rem
+
+  p
+    margin: 0
+    color: #475569
+
 // Responsive result grid.
 .recommendation-list
   display: grid
@@ -120,6 +207,8 @@
   border: 1px solid #d1d5db
   border-radius: 8px
   padding: 0.75rem
+  background: #ffffff
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04)
 
   h3
     margin: 0 0 0.3rem
@@ -127,7 +216,28 @@
   p
     margin: 0 0 0.3rem
 
+  .course-title
+    font-weight: 600
+    color: #334155
+
+  .course-meta
+    color: #1d4ed8
+    font-size: 0.9rem
+
+  .no-catalog-warning
+    color: #92400e
+    background: #fef3c7
+    border: 1px solid #fcd34d
+    border-radius: 4px
+    padding: 0.4rem 0.6rem
+    font-size: 0.85rem
+    margin-top: 0.4rem
+
 // Mobile-friendly header stacking.
 @media (max-width: 700px)
   .page-header
     flex-direction: column
+
+  .section-heading
+    flex-direction: column
+    align-items: flex-start

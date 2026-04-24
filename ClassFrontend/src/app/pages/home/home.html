@@ -30,6 +30,9 @@
       <button class="btn btn-outline" (click)="toggleCreate()">
         {{ showCreate ? 'Cancel' : '+ Create New Schedule' }}
       </button>
+      <button class="btn btn-primary" routerLink="/recommendations">
+        View Course Recommendations
+      </button>
     </div>
 
     <div *ngIf="showCreate" class="create-dropdown">

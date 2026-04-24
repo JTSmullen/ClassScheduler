@@ -1,5 +1,5 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, ChangeDetectorRef, PLATFORM_ID, Inject } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import {
@@ -40,10 +40,17 @@ export class RecommendationPage implements OnInit {
 
   constructor(
     private router: Router,
-    private recommendationService: RecommendationService
+    private recommendationService: RecommendationService,
+    private cdr: ChangeDetectorRef,
+    @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
   ngOnInit(): void {
+    // SSR guard: localStorage only exists in the browser.
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
     // Gate this page behind login presence.
     const token = this.getAuthToken();
     if (!token) {
@@ -71,6 +78,26 @@ export class RecommendationPage implements OnInit {
       this.selectedSemester.trim().length > 0 &&
       !this.generatingSchedule
     );
+  }
+
+  get selectedProgramLabel(): string {
+    return this.programSheets.find((sheet) => sheet.programCode === this.selectedProgramCode)?.label || 'None selected';
+  }
+
+  get recommendationCount(): number {
+    return this.recommendationResponse?.recommendations.length || 0;
+  }
+
+  get remainingRequirementCount(): number {
+    return this.recommendationResponse?.remainingRequirementsAfterSemester.length || 0;
+  }
+
+  get unavailableCourseCount(): number {
+    return this.recommendationResponse?.unavailableCourseCodes.length || 0;
+  }
+
+  get blockingIssueCount(): number {
+    return this.recommendationResponse?.blockingIssues.length || 0;
   }
 
   handleGenerateSchedule(event: Event): void {
@@ -106,11 +133,13 @@ export class RecommendationPage implements OnInit {
         next: (response) => {
           this.recommendationResponse = response;
           this.generatingSchedule = false;
+          this.cdr.detectChanges();
         },
         error: (error) => {
           this.generatingSchedule = false;
           this.requestError =
             error?.error?.detail || error?.error?.message || 'Unable to generate schedule right now.';
+          this.cdr.detectChanges();
         },
       });
   }
@@ -134,12 +163,14 @@ export class RecommendationPage implements OnInit {
         }
 
         this.loadingOptions = false;
+        this.cdr.detectChanges();
       },
       error: (error) => {
         this.loadingOptions = false;
         // Prefer backend-provided details, then fallback to a generic message.
         this.optionsError =
           error?.error?.detail || error?.error?.message || 'Could not load recommendation options.';
+        this.cdr.detectChanges();
       },
     });
   }
