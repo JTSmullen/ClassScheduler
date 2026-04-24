@@ -520,6 +520,79 @@ body {
   box-shadow: var(--shadow);
 }
 
+.header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.app-shell--recommendations {
+  grid-template-rows: auto 1fr;
+}
+
+.recommendation-layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+  min-height: 0;
+}
+
+.recommendation-panel {
+  min-height: 0;
+}
+
+.recommendation-copy {
+  max-width: 800px;
+}
+
+.recommendation-form-grid {
+  margin-top: 8px;
+}
+
+.field__input--multiline {
+  min-height: 132px;
+  resize: vertical;
+}
+
+.info-banner {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #e8f2fb;
+  color: #234c69;
+  font-weight: 700;
+}
+
+.pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.pill--muted {
+  background: #eef3f7;
+  color: var(--text-muted);
+}
+
+.recommendation-card {
+  box-shadow: 0 10px 22px rgba(32, 48, 61, 0.06);
+}
+
 /* Collapse the layout on smaller screens without losing functionality. */
 /* A media query means "only use these styles when the screen is this size or smaller." */
 @media (max-width: 1040px) {
@@ -529,6 +602,10 @@ body {
   }
 
   .app-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .recommendation-layout {
     grid-template-columns: 1fr;
   }
 
@@ -554,6 +631,10 @@ body {
 @media (max-width: 720px) {
   .app-shell {
     padding: 16px;
+  }
+
+  .header-actions {
+    justify-content: flex-start;
   }
 
   .auth-panel,

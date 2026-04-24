@@ -11,8 +11,8 @@
 
     AWS will detect any change to the frontend and automatically rebuild it, so must have the AWS one uncommented when merged into main
 */
-const baseUrl = 'https://lfrgiy6ixwc3psnimphcam4npa0rxxbq.lambda-url.us-east-2.on.aws/api/v1';
-// const baseUrl = 'http://localhost:8080/api/v1';
+// const baseUrl = 'https://lfrgiy6ixwc3psnimphcam4npa0rxxbq.lambda-url.us-east-2.on.aws/api/v1';
+const baseUrl = 'http://localhost:8080/api/v1';
 
 // Store the JWT under a stable key so refreshes keep the user signed in.
 // localStorage is the browser's built-in small key/value store.
@@ -187,4 +187,12 @@ export function filterSearchResults(filterPayload) {
 // Load the backend-provided filter choices for the user's active search.
 export function getFilterOptions() {
   return getJson('/search/filter/options');
+}
+
+export function getRecommendationOptions() {
+  return getJson('/recommendations/options');
+}
+
+export function requestCourseRecommendations(data) {
+  return postJson('/recommendations', data);
 }

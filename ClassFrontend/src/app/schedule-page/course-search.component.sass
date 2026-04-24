@@ -1,0 +1,175 @@
+.course-search-container
+  display: flex
+  flex-direction: column
+  height: 100%
+  background: white
+
+  .search-header
+    display: flex
+    justify-content: space-between
+    align-items: center
+    padding: 1.5rem
+    border-bottom: 1px solid #e5e7eb
+    flex-shrink: 0
+
+    h2
+      margin: 0
+      font-size: 1.25rem
+      font-weight: 600
+
+    .close-btn
+      background: none
+      border: none
+      cursor: pointer
+      padding: 0.5rem
+      color: #6b7280
+      border-radius: 4px
+      &:hover
+        background-color: #f3f4f6
+
+  .search-content
+    display: flex
+    flex-direction: column
+    flex: 1
+    overflow: hidden
+
+    .search-bar
+      display: flex
+      align-items: center
+      gap: 0.75rem
+      padding: 1rem 1.5rem
+      background-color: #f9fafb
+      border-bottom: 1px solid #e5e7eb
+      flex-shrink: 0
+
+      .search-icon
+        color: #9ca3af
+
+      input
+        flex: 1
+        padding: 0.75rem
+        border: 1px solid #e5e7eb
+        border-radius: 0.375rem
+        font-size: 0.95rem
+        &:focus
+          outline: none
+          border-color: #3b82f6
+
+      .pagination-controls
+        display: flex
+        align-items: center
+        gap: 0.5rem
+        padding: 0 0.75rem
+        border-left: 1px solid #e5e7eb
+        border-right: 1px solid #e5e7eb
+
+        .page-indicator
+          font-size: 0.8rem
+          font-weight: 700
+          color: #6b7280
+          min-width: 50px
+          text-align: center
+
+        .page-btn
+          background: none
+          border: none
+          cursor: pointer
+          display: flex
+          color: #6b7280
+          &:disabled
+            color: #d1d5db
+            cursor: not-allowed
+          &:hover:not(:disabled)
+            color: #1f2937
+
+    .search-main
+      display: flex
+      flex: 1
+      overflow: hidden
+
+      .filters-panel
+        width: 280px
+        border-right: 1px solid #e5e7eb
+        overflow-y: auto
+        flex-shrink: 0
+
+        .filters-header
+          display: flex
+          justify-content: space-between
+          padding: 1rem 1.5rem
+          background: #f9fafb
+          border-bottom: 1px solid #e5e7eb
+
+        .filter-group
+          border-bottom: 1px solid #f3f4f6
+          .filter-title
+            width: 100%
+            display: flex
+            justify-content: space-between
+            padding: 0.75rem 1.5rem
+            background: none
+            border: none
+            cursor: pointer
+            font-size: 0.9rem
+            font-weight: 500
+
+          .filter-options
+            padding: 0.5rem 0.75rem
+            background: #fafbfc
+            .filter-option
+              display: flex
+              align-items: center
+              gap: 0.5rem
+              padding: 0.4rem 0.75rem
+              font-size: 0.85rem
+              cursor: pointer
+
+      .results-panel
+        flex: 1
+        display: flex
+        flex-direction: column
+        overflow: hidden
+
+        .results-header
+          padding: 1rem 1.5rem
+          border-bottom: 1px solid #e5e7eb
+          background: #f9fafb
+
+        .results-list
+          flex: 1
+          overflow-y: auto
+          .result-item
+            padding: 1rem 1.5rem
+            border-bottom: 1px solid #f3f4f6
+            cursor: pointer
+            &:hover
+              background: #f9fafb
+
+            .course-header
+              display: flex
+              justify-content: space-between
+              .course-title
+                font-weight: 600
+              .course-credits
+                background: #e0e7ff
+                color: #4f46e5
+                padding: 0.1rem 0.4rem
+                border-radius: 4px
+                font-size: 0.7rem
+
+            .course-name
+              font-size: 0.9rem
+              color: #374151
+
+            .course-faculty
+              font-size: 0.8rem
+              color: #6b7280
+              .label
+                font-weight: 600
+
+.loading, .no-results
+  display: flex
+  align-items: center
+  justify-content: center
+  flex: 1
+  color: #6b7280
