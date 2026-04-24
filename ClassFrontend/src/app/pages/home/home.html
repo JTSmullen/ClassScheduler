@@ -16,8 +16,8 @@
     <div class="schedule-section" *ngIf="schedules().length > 0">
       <h3 class="section-title">Your Schedules</h3>
       <div class="schedule-grid">
-        <button 
-          *ngFor="let s of schedules()" 
+        <button
+          *ngFor="let s of schedules()"
           class="btn btn-schedule-card"
           (click)="navigateToSchedule(s.id)">
           <span class="schedule-name">{{ s.name }}</span>

@@ -4,6 +4,8 @@ import com.classScheduler.app.course.dto.CourseSectionDTO;
 import com.classScheduler.app.course.entity.Course;
 import com.classScheduler.app.course.entity.CourseSection;
 import com.classScheduler.app.course.repository.CourseRepository;
+import com.classScheduler.app.program.entity.ProgramSheet;
+import com.classScheduler.app.program.repository.ProgramSheetRepository;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -26,6 +28,7 @@ import java.util.Map;
 public class DatabaseSeeder implements CommandLineRunner {
 
     private final CourseRepository courseRepository;
+    private final ProgramSheetRepository programSheetRepository;
     private final ObjectMapper objectMapper;
 
     @Transactional
@@ -36,6 +39,12 @@ public class DatabaseSeeder implements CommandLineRunner {
             dataSeed();
         } else {
             System.out.println("Database already seeded.");
+        }
+
+        if (programSheetRepository.count() <= 0) {
+            seedProgramSheets();
+        } else {
+            System.out.println("Program sheets already seeded.");
         }
 
     }
@@ -124,6 +133,37 @@ public class DatabaseSeeder implements CommandLineRunner {
 
         } catch (Exception e) {
             System.out.println("Error while seeding");
+            e.printStackTrace();
+        }
+    }
+
+    private void seedProgramSheets() {
+        try {
+            InputStream stream = getClass().getClassLoader()
+                    .getResourceAsStream("program_sheets/gcc_bs_physics_computer_software_2025.json");
+
+            if (stream == null) {
+                System.out.println("No program sheet JSON found");
+                return;
+            }
+
+            JsonNode root = objectMapper.readTree(stream);
+
+            ProgramSheet programSheet = new ProgramSheet();
+            programSheet.setProgramCode(root.path("programCode").asText());
+            programSheet.setInstitutionName(root.path("institutionName").asText());
+            programSheet.setProgramTitle(root.path("programTitle").asText());
+            programSheet.setDegreeName(root.path("degreeName").asText());
+            programSheet.setEntryYear(root.path("entryYear").asInt());
+            programSheet.setRevisedDate(root.path("revisedDate").asText());
+            programSheet.setTotalHoursRequired(root.path("totalHoursRequired").asInt());
+            programSheet.setProgramDataJson(objectMapper.writeValueAsString(root));
+
+            programSheetRepository.save(programSheet);
+
+            System.out.println("Saved program sheet: " + programSheet.getProgramCode());
+        } catch (Exception e) {
+            System.out.println("Error while seeding program sheets");
             e.printStackTrace();
         }
     }

@@ -1,0 +1,133 @@
+// Top-level page container and spacing.
+.recommendation-page
+  max-width: 980px
+  margin: 0 auto
+  padding: 2rem 1rem 3rem
+  display: grid
+  gap: 1rem
+
+// Header layout for title/copy and back navigation link.
+.page-header
+  display: flex
+  align-items: flex-start
+  justify-content: space-between
+  gap: 1rem
+
+  h1
+    margin: 0
+
+  p
+    margin: 0.5rem 0 0
+    color: #4b5563
+
+// Home navigation link style.
+.back-link
+  color: #1d4ed8
+  text-decoration: none
+  font-weight: 600
+
+// Reusable card-like panel shell.
+.panel
+  background: #ffffff
+  border: 1px solid #d1d5db
+  border-radius: 10px
+  padding: 1rem
+
+// Request form layout and field styles.
+.form-panel
+  display: grid
+  gap: 0.75rem
+
+  label
+    font-weight: 600
+
+  textarea,
+  select
+    width: 100%
+    border: 1px solid #9ca3af
+    border-radius: 8px
+    padding: 0.6rem
+    font: inherit
+
+  button
+    width: fit-content
+    border: none
+    border-radius: 8px
+    padding: 0.6rem 1rem
+    background: #1d4ed8
+    color: #ffffff
+    font-weight: 600
+    cursor: pointer
+
+    &:disabled
+      opacity: 0.5
+      cursor: not-allowed
+
+// Parsed course-code chips shown under textarea.
+.inline-list
+  display: flex
+  flex-wrap: wrap
+  gap: 0.5rem
+
+.pill
+  padding: 0.25rem 0.5rem
+  border-radius: 999px
+  background: #dbeafe
+  color: #1e3a8a
+  font-weight: 600
+  font-size: 0.85rem
+
+// Error text style for options/request failures.
+.panel-error
+  color: #991b1b
+  font-weight: 600
+
+// Warning callout for unavailable courses.
+.panel-warning
+  color: #92400e
+  background: #fef3c7
+  border: 1px solid #f59e0b
+  border-radius: 8px
+  padding: 0.5rem
+  margin-bottom: 0.75rem
+
+.panel-success
+  color: #14532d
+  background: #dcfce7
+  border: 1px solid #22c55e
+  border-radius: 8px
+  padding: 0.5rem
+  margin-bottom: 0.75rem
+
+.panel-notes
+  background: #f8fafc
+
+  h3
+    margin: 0 0 0.5rem
+
+  ul
+    margin: 0
+    padding-left: 1.25rem
+
+// Responsive result grid.
+.recommendation-list
+  display: grid
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr))
+  gap: 0.75rem
+
+// Individual recommendation card style.
+.recommendation-card
+  border: 1px solid #d1d5db
+  border-radius: 8px
+  padding: 0.75rem
+
+  h3
+    margin: 0 0 0.3rem
+
+  p
+    margin: 0 0 0.3rem
+
+// Mobile-friendly header stacking.
+@media (max-width: 700px)
+  .page-header
+    flex-direction: column
