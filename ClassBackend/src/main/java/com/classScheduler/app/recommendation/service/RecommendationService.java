@@ -1,6 +1,7 @@
 package com.classScheduler.app.recommendation.service;
 
 import com.classScheduler.app.course.dto.CourseSectionDTO;
+import com.classScheduler.app.course.entity.ClassTime;
 import com.classScheduler.app.course.entity.CourseSection;
 import com.classScheduler.app.course.repository.CourseSectionRepository;
 import com.classScheduler.app.program.entity.ProgramSheet;
@@ -20,22 +21,54 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Service
 public class RecommendationService {
 
-    private static final int MAX_RECOMMENDATIONS = 8;
-    private static final int MAX_UNAVAILABLE_CODES = 8;
+    private static final int MAX_RECOMMENDATIONS = 7;
+    private static final int MAX_UNAVAILABLE_CODES = 16;
+    private static final int MIN_TERM_CREDITS = 15;
+    private static final int MAX_TERM_CREDITS = 18;
     private static final Pattern COURSE_CODE_PATTERN = Pattern.compile("^([A-Z]+)\\s*(\\d+[A-Z]?)$");
+    private static final Pattern COURSE_TOKEN_PATTERN = Pattern.compile("([A-Z]{2,5})\\s*(\\d{2,3}[A-Z]?)");
+
+    // Fixed four-year sequence requested by the user.
+    private static final List<String> STANDARD_PLAN_SEMESTERS = List.of(
+        "Freshman Fall",
+        "Freshman Spring",
+        "Sophomore Fall",
+        "Sophomore Spring",
+        "Junior Fall",
+        "Junior Spring",
+        "Senior Fall",
+        "Senior Spring"
+    );
+
+    private static final Map<String, Integer> TERM_INDEX_BY_LABEL = Map.ofEntries(
+        Map.entry("freshman fall", 0),
+        Map.entry("freshman spring", 1),
+        Map.entry("sophomore fall", 2),
+        Map.entry("sophomore spring", 3),
+        Map.entry("junior fall", 4),
+        Map.entry("junior spring", 5),
+        Map.entry("senior fall", 6),
+        Map.entry("senior spring", 7)
+    );
 
     private final ProgramSheetRepository programSheetRepository;
     private final CourseSectionRepository courseSectionRepository;
@@ -53,6 +86,8 @@ public class RecommendationService {
 
     @Transactional(readOnly = true)
     public RecommendationOptionsDTO getOptions() {
+        // Options endpoint intentionally returns fixed 4-year semester labels so planning
+        // logic can compare "before/after" terms without depending on catalog year strings.
         List<ProgramSheetOptionDTO> programSheets = programSheetRepository.findAll().stream()
                 .sorted(Comparator.comparing(ProgramSheet::getProgramTitle)
                         .thenComparingInt(ProgramSheet::getEntryYear))
@@ -62,62 +97,128 @@ public class RecommendationService {
                 ))
                 .toList();
 
-        List<String> semesters = courseSectionRepository.findDistinctSemesters();
-        return new RecommendationOptionsDTO(programSheets, semesters);
+        return new RecommendationOptionsDTO(programSheets, STANDARD_PLAN_SEMESTERS);
     }
 
     @Transactional(readOnly = true)
     public RecommendationResponseDTO recommendCourses(RecommendationRequestDTO request) {
+        // Core high-level workflow (commented for future reference):
+        // 1) Parse/normalize completed courses and selected semester.
+        // 2) Build semester-by-semester sample plan from sampleFourYearPlan.
+        // 3) Remove completed courses and find backlog from semesters before selected term.
+        // 4) Try to place backlog into selected term by replacing electives first, then HUMA.
+        // 5) If needed, push selected-term major courses forward (<= Senior Spring) to open space.
+        // 6) Keep credits in the requested 15-18 range when possible.
+        // 7) Resolve real catalog sections and avoid time conflicts.
+        // 8) Return recommendations + notes explaining tradeoffs and blockers.
         ProgramSheet programSheet = programSheetRepository.findByProgramCode(request.getProgramCode())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Program sheet not found"));
 
         JsonNode root = readProgramSheet(programSheet);
-        Set<String> completedCourses = normalizeCompletedCourses(request.getCompletedCourses());
-        List<ProgramCourseCandidate> candidates = extractCandidates(root);
 
-        LinkedHashMap<String, RecommendedCourseDTO> recommendations = new LinkedHashMap<>();
+        String requestedSemesterLabel = normalizeSemesterLabel(request.getSemester());
+        int selectedTermIndex = resolveSelectedTermIndex(requestedSemesterLabel)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "semester must match one of: " + String.join(", ", STANDARD_PLAN_SEMESTERS)
+                ));
+
+        String requestedSeason = seasonForTermIndex(selectedTermIndex);
+        String catalogSemester = resolveCatalogSemesterForSeason(requestedSeason)
+                .orElseGet(() -> request.getSemester());
+
+        Set<String> completedCourses = normalizeCompletedCourses(request.getCompletedCourses());
+        Map<String, Integer> creditsByCourseCode = extractCreditsByCode(root);
+        RequirementPools pools = extractRequirementPools(root);
+        List<PlanTerm> planTerms = buildPlanTerms(root, pools, completedCourses, requestedSeason);
+
+        List<String> planningNotes = new ArrayList<>();
+        List<String> blockingIssues = new ArrayList<>();
         LinkedHashSet<String> unavailableCourseCodes = new LinkedHashSet<>();
 
-        for (ProgramCourseCandidate candidate : candidates) {
-            String courseCode = buildCourseCode(candidate.subject(), candidate.number());
+        PlanTerm selectedTerm = planTerms.get(selectedTermIndex);
+        List<AssignedCourse> backlogCourses = collectPriorUntakenCourses(planTerms, selectedTermIndex, completedCourses);
+        Set<String> backlogCodes = backlogCourses.stream().map(AssignedCourse::courseCode).collect(Collectors.toCollection(LinkedHashSet::new));
 
-            if (completedCourses.contains(courseCode) || recommendations.containsKey(courseCode)) {
+        if (backlogCodes.isEmpty()) {
+            planningNotes.add("No untaken courses remain from earlier semesters in the sample four-year plan.");
+        } else {
+            planningNotes.add("Detected %d untaken earlier-plan course(s); attempting replacement in the selected semester.".formatted(backlogCodes.size()));
+        }
+
+        Set<String> pushedCourses = new LinkedHashSet<>();
+        for (AssignedCourse backlog : backlogCourses) {
+            if (selectedTerm.containsCourse(backlog.courseCode())) {
                 continue;
             }
 
-            List<CourseSection> matchingSections = courseSectionRepository.findBySubjectIgnoreCaseAndNumberAndSemester(
-                    candidate.subject(),
-                    candidate.number(),
-                    request.getSemester()
-            );
-
-            if (matchingSections.isEmpty()) {
-                if (unavailableCourseCodes.size() < MAX_UNAVAILABLE_CODES) {
-                    unavailableCourseCodes.add(courseCode);
-                }
+            if (!isCourseOfferedInSeason(backlog.courseCode(), requestedSeason)) {
+                unavailableCourseCodes.add(backlog.courseCode());
                 continue;
             }
 
-            CourseSection selectedSection = choosePreferredSection(matchingSections);
-            recommendations.put(courseCode, new RecommendedCourseDTO(
-                    courseCode,
-                    candidate.courseTitle(),
-                    candidate.requirementCategory(),
-                    candidate.recommendationType(),
-                    toDto(selectedSection)
-            ));
-
-            if (recommendations.size() >= MAX_RECOMMENDATIONS) {
-                break;
+            if (selectedTerm.tryReplaceForBacklog(backlog, creditsByCourseCode, MIN_TERM_CREDITS, MAX_TERM_CREDITS)) {
+                continue;
             }
+
+            Optional<AssignedCourse> movableMajor = selectedTerm.findMovableMajor();
+            if (movableMajor.isPresent() && moveCourseForwardWithinPlan(
+                    movableMajor.get(),
+                    selectedTermIndex,
+                    planTerms,
+                    creditsByCourseCode,
+                    requestedSeason
+            )) {
+                pushedCourses.add(movableMajor.get().courseCode());
+                selectedTerm.removeCourse(movableMajor.get().courseCode());
+                selectedTerm.addCourse(backlog);
+                continue;
+            }
+
+            blockingIssues.add("Could not place %s into %s because no elective/HUMA replacement or forward shift was feasible."
+                    .formatted(backlog.courseCode(), STANDARD_PLAN_SEMESTERS.get(selectedTermIndex)));
+        }
+
+        if (!pushedCourses.isEmpty()) {
+            planningNotes.add("Shifted forward course(s) to preserve earlier untaken work: " + String.join(", ", pushedCourses));
+        }
+
+        applyCreditBalancing(selectedTerm, pools, completedCourses, creditsByCourseCode, requestedSeason, planningNotes);
+        replaceMajorWithAlternativesWhenPossible(selectedTerm, pools, completedCourses, requestedSeason, planningNotes);
+
+        // Build conflict-aware section picks.
+        List<RecommendedCourseDTO> recommendations = buildConflictAwareRecommendations(
+                selectedTerm,
+                catalogSemester,
+                unavailableCourseCodes,
+                planningNotes,
+                blockingIssues
+        );
+
+        boolean canGraduateOnTime = blockingIssues.isEmpty() && backlogCodes.stream().allMatch(code ->
+                selectedTerm.containsCourse(code) || unavailableCourseCodes.contains(code)
+        );
+
+        if (!canGraduateOnTime) {
+            if (selectedTerm.courseCountByKind(CourseKind.HUMA) > 0) {
+                planningNotes.add("Consider a summer course for HUMA/elective pressure relief.");
+            }
+            blockingIssues.add("Current inputs may prevent an on-time four-year completion with the available replacements.");
+        }
+
+        if (recommendations.isEmpty() && blockingIssues.isEmpty()) {
+            blockingIssues.add("No conflict-free sections were available for the selected semester.");
         }
 
         return new RecommendationResponseDTO(
                 programSheet.getProgramCode(),
                 request.getSemester(),
                 normalizeCompletedCourseList(request.getCompletedCourses()),
-                new ArrayList<>(recommendations.values()),
-                new ArrayList<>(unavailableCourseCodes)
+                recommendations,
+                new ArrayList<>(unavailableCourseCodes).stream().limit(MAX_UNAVAILABLE_CODES).toList(),
+                canGraduateOnTime,
+                planningNotes,
+                blockingIssues
         );
     }
 
@@ -129,44 +230,586 @@ public class RecommendationService {
         }
     }
 
-    private List<ProgramCourseCandidate> extractCandidates(JsonNode root) {
-        List<ProgramCourseCandidate> candidates = new ArrayList<>();
-
-        for (JsonNode category : root.path("requirementCategories")) {
-            String requirementCategory = category.path("title").asText("Program requirement");
-
-            appendCourseNodes(candidates, category.path("courses"), requirementCategory, "required");
-            appendCourseNodes(candidates, category.path("selection").path("from"), requirementCategory, "choice");
-        }
-
-        return candidates;
-    }
-
-    private void appendCourseNodes(
-            List<ProgramCourseCandidate> candidates,
-            JsonNode courseNodes,
-            String requirementCategory,
-            String recommendationType
+    private List<RecommendedCourseDTO> buildConflictAwareRecommendations(
+            PlanTerm selectedTerm,
+            String catalogSemester,
+            LinkedHashSet<String> unavailableCourseCodes,
+            List<String> planningNotes,
+            List<String> blockingIssues
     ) {
-        if (!courseNodes.isArray()) {
-            return;
-        }
+        List<AssignedCourse> plannedCourses = selectedTerm.courses();
+        Map<String, List<CourseSection>> sectionsByCode = new LinkedHashMap<>();
 
-        for (JsonNode courseNode : courseNodes) {
-            String subject = courseNode.path("subject").asText("").trim();
-
-            if (!StringUtils.hasText(subject) || !courseNode.path("number").canConvertToInt()) {
+        for (AssignedCourse assignment : plannedCourses) {
+            ParsedCode parsed = parseCourseCode(assignment.courseCode());
+            if (parsed == null) {
                 continue;
             }
 
-            candidates.add(new ProgramCourseCandidate(
-                    subject.toUpperCase(Locale.ROOT),
-                    courseNode.path("number").asInt(),
-                    courseNode.path("title").asText(buildCourseCode(subject, courseNode.path("number").asInt())),
-                    requirementCategory,
-                    recommendationType
+            List<CourseSection> matchingSections = courseSectionRepository.findBySubjectIgnoreCaseAndNumberAndSemester(
+                    parsed.subject(),
+                    parsed.number(),
+                    catalogSemester
+            );
+
+            if (matchingSections.isEmpty()) {
+                unavailableCourseCodes.add(assignment.courseCode());
+            } else {
+                sectionsByCode.put(assignment.courseCode(), matchingSections);
+            }
+        }
+
+        List<String> sortedByConstraint = sectionsByCode.entrySet().stream()
+                .sorted(Comparator.comparingInt(entry -> entry.getValue().size()))
+                .map(Map.Entry::getKey)
+                .toList();
+
+        Map<String, CourseSection> selectedSections = new LinkedHashMap<>();
+        Set<ClassTimeKey> occupied = new HashSet<>();
+
+        for (String courseCode : sortedByConstraint) {
+            List<CourseSection> candidates = sectionsByCode.get(courseCode).stream()
+                    .sorted(Comparator
+                            .comparing((CourseSection section) -> !section.isOpen())
+                            .thenComparing(Comparator.comparingInt(CourseSection::getOpenSeats).reversed())
+                            .thenComparing(section -> section.getSection() == null ? "" : section.getSection()))
+                    .toList();
+
+            Optional<CourseSection> chosen = candidates.stream()
+                    .filter(section -> !conflictsWithOccupied(section, occupied))
+                    .findFirst();
+
+            if (chosen.isPresent()) {
+                selectedSections.put(courseCode, chosen.get());
+                markOccupied(chosen.get(), occupied);
+            } else {
+                unavailableCourseCodes.add(courseCode);
+                blockingIssues.add("Time conflict prevented a section selection for %s in %s.".formatted(courseCode, catalogSemester));
+            }
+        }
+
+        if (selectedSections.size() < plannedCourses.size()) {
+            planningNotes.add("Conflict and/or availability filtering reduced the returned schedule list.");
+        }
+
+        List<RecommendedCourseDTO> dtoList = new ArrayList<>();
+        for (AssignedCourse assignment : plannedCourses) {
+            CourseSection section = selectedSections.get(assignment.courseCode());
+            if (section == null) {
+                continue;
+            }
+
+            dtoList.add(new RecommendedCourseDTO(
+                    assignment.courseCode(),
+                    assignment.title(),
+                    assignment.requirementCategory(),
+                    assignment.recommendationType(),
+                    toDto(section)
             ));
         }
+
+        return dtoList.stream().limit(MAX_RECOMMENDATIONS).toList();
+    }
+
+    private void applyCreditBalancing(
+            PlanTerm selectedTerm,
+            RequirementPools pools,
+            Set<String> completedCourses,
+            Map<String, Integer> creditsByCourseCode,
+            String requestedSeason,
+            List<String> planningNotes
+    ) {
+        int termCredits = selectedTerm.totalCredits(creditsByCourseCode);
+
+        // Fill low-credit schedules with elective/huma where possible.
+        if (termCredits < MIN_TERM_CREDITS) {
+            for (String candidate : pools.electiveOrGeneralFillers()) {
+                if (selectedTerm.containsCourse(candidate) || completedCourses.contains(candidate)) {
+                    continue;
+                }
+                if (!isCourseOfferedInSeason(candidate, requestedSeason)) {
+                    continue;
+                }
+
+                selectedTerm.addCourse(new AssignedCourse(
+                        candidate,
+                        candidate,
+                        "General Elective Fill",
+                        "choice",
+                        CourseKind.ELECTIVE
+                ));
+
+                termCredits = selectedTerm.totalCredits(creditsByCourseCode);
+                if (termCredits >= MIN_TERM_CREDITS) {
+                    planningNotes.add("Added elective/HUMA filler to keep load near 15-18 credits.");
+                    break;
+                }
+            }
+        }
+
+        // Trim overloaded schedules by removing elective first, then HUMA.
+        while (termCredits > MAX_TERM_CREDITS) {
+            Optional<AssignedCourse> removable = selectedTerm.firstCourseOfKinds(List.of(CourseKind.ELECTIVE, CourseKind.HUMA));
+            if (removable.isEmpty()) {
+                break;
+            }
+            selectedTerm.removeCourse(removable.get().courseCode());
+            termCredits = selectedTerm.totalCredits(creditsByCourseCode);
+            planningNotes.add("Removed %s to keep credit load within 15-18 when possible.".formatted(removable.get().courseCode()));
+        }
+    }
+
+    private void replaceMajorWithAlternativesWhenPossible(
+            PlanTerm selectedTerm,
+            RequirementPools pools,
+            Set<String> completedCourses,
+            String requestedSeason,
+            List<String> planningNotes
+    ) {
+        // Implements request item #11 as a lightweight rule: if a major course has a same-category
+        // alternative and is not offered this season, swap to an available alternative.
+        for (AssignedCourse major : selectedTerm.courses().stream().filter(c -> c.kind() == CourseKind.MAJOR).toList()) {
+            if (isCourseOfferedInSeason(major.courseCode(), requestedSeason)) {
+                continue;
+            }
+
+            Optional<String> alternative = pools.majorAlternatives().stream()
+                    .filter(code -> !selectedTerm.containsCourse(code))
+                    .filter(code -> !completedCourses.contains(code))
+                    .filter(code -> isCourseOfferedInSeason(code, requestedSeason))
+                    .findFirst();
+
+            if (alternative.isPresent()) {
+                selectedTerm.removeCourse(major.courseCode());
+                selectedTerm.addCourse(new AssignedCourse(
+                        alternative.get(),
+                        alternative.get(),
+                        "Major Alternative",
+                        "choice",
+                        CourseKind.MAJOR
+                ));
+                planningNotes.add("Replaced unavailable major course %s with alternative %s."
+                        .formatted(major.courseCode(), alternative.get()));
+            }
+        }
+    }
+
+    private boolean moveCourseForwardWithinPlan(
+            AssignedCourse course,
+            int fromTermIndex,
+            List<PlanTerm> planTerms,
+            Map<String, Integer> creditsByCourseCode,
+            String requestedSeason
+    ) {
+        for (int index = fromTermIndex + 1; index < planTerms.size(); index++) {
+            PlanTerm candidateTerm = planTerms.get(index);
+
+            // Keep all pushes within the four-year window (Senior Spring index = 7).
+            if (index > 7) {
+                return false;
+            }
+
+            if (!isCourseOfferedInSeason(course.courseCode(), seasonForTermIndex(index))) {
+                continue;
+            }
+
+            int projectedCredits = candidateTerm.totalCredits(creditsByCourseCode)
+                    + creditForCourse(course.courseCode(), creditsByCourseCode);
+            if (projectedCredits > MAX_TERM_CREDITS) {
+                continue;
+            }
+
+            candidateTerm.addCourse(course);
+            return true;
+        }
+
+        return false;
+    }
+
+    private List<AssignedCourse> collectPriorUntakenCourses(
+            List<PlanTerm> planTerms,
+            int selectedTermIndex,
+            Set<String> completedCourses
+    ) {
+        List<AssignedCourse> backlog = new ArrayList<>();
+        for (int index = 0; index < selectedTermIndex; index++) {
+            for (AssignedCourse course : planTerms.get(index).courses()) {
+                if (!completedCourses.contains(course.courseCode())) {
+                    backlog.add(course);
+                }
+            }
+        }
+        return backlog;
+    }
+
+    private List<PlanTerm> buildPlanTerms(
+            JsonNode root,
+            RequirementPools pools,
+            Set<String> completedCourses,
+            String requestedSeason
+    ) {
+        List<PlanTerm> terms = new ArrayList<>(Collections.nCopies(8, null));
+
+        for (JsonNode yearNode : root.path("sampleFourYearPlan")) {
+            String year = yearNode.path("year").asText("");
+            for (JsonNode termNode : yearNode.path("terms")) {
+                String term = termNode.path("term").asText("");
+                String label = "%s %s".formatted(year, term).trim();
+                Integer termIndex = TERM_INDEX_BY_LABEL.get(label.toLowerCase(Locale.ROOT));
+                if (termIndex == null) {
+                    continue;
+                }
+
+                PlanTerm planTerm = new PlanTerm(label);
+                for (JsonNode courseNode : termNode.path("courses")) {
+                    String rawLabel = courseNode.asText("").trim();
+                    resolvePlanLabelToAssignments(rawLabel, pools, completedCourses, seasonForTermIndex(termIndex))
+                            .forEach(planTerm::addCourse);
+                }
+
+                terms.set(termIndex, planTerm);
+            }
+        }
+
+        for (int index = 0; index < terms.size(); index++) {
+            if (terms.get(index) == null) {
+                terms.set(index, new PlanTerm(STANDARD_PLAN_SEMESTERS.get(index)));
+            }
+        }
+
+        return terms;
+    }
+
+    private List<AssignedCourse> resolvePlanLabelToAssignments(
+            String rawLabel,
+            RequirementPools pools,
+            Set<String> completedCourses,
+            String season
+    ) {
+        String normalized = rawLabel.toLowerCase(Locale.ROOT);
+        List<String> codes = parseCourseTokens(rawLabel);
+
+        if (normalized.contains("electives") && codes.isEmpty()) {
+            return pickFirstAvailable(pools.electiveOrGeneralFillers(), completedCourses, season)
+                    .map(code -> List.of(new AssignedCourse(code, rawLabel, "General Electives", "choice", CourseKind.ELECTIVE)))
+                    .orElseGet(List::of);
+        }
+
+        if (normalized.contains("huma") && normalized.contains("writing")) {
+            Optional<String> writing = pickFirstAvailable(List.of("WRIT 101"), completedCourses, season);
+            if (writing.isPresent()) {
+                return List.of(new AssignedCourse(writing.get(), rawLabel, "Writing Requirement", "required", CourseKind.MAJOR));
+            }
+            return pickFirstAvailable(pools.humaCodes(), completedCourses, season)
+                    .map(code -> List.of(new AssignedCourse(code, rawLabel, "Humanities Core", "choice", CourseKind.HUMA)))
+                    .orElseGet(List::of);
+        }
+
+        if (normalized.contains("huma") && codes.isEmpty()) {
+            return pickFirstAvailable(pools.humaCodes(), completedCourses, season)
+                    .map(code -> List.of(new AssignedCourse(code, rawLabel, "Humanities Core", "choice", CourseKind.HUMA)))
+                    .orElseGet(List::of);
+        }
+
+        if (normalized.contains("ssft") && codes.isEmpty()) {
+            return pickFirstAvailable(pools.ssftCodes(), completedCourses, season)
+                    .map(code -> List.of(new AssignedCourse(code, rawLabel, "Studies in Science, Faith, and Technology", "choice", CourseKind.MAJOR)))
+                    .orElseGet(List::of);
+        }
+
+        if (normalized.contains("social science") && codes.isEmpty()) {
+            return pickFirstAvailable(pools.socialScienceCodes(), completedCourses, season)
+                    .map(code -> List.of(new AssignedCourse(code, rawLabel, "Foundations of the Social Sciences", "choice", CourseKind.MAJOR)))
+                    .orElseGet(List::of);
+        }
+
+        if (normalized.contains("technical elective") && codes.isEmpty()) {
+            return pickFirstAvailable(pools.technicalElectiveCodes(), completedCourses, season)
+                    .map(code -> List.of(new AssignedCourse(code, rawLabel, "Technical Elective", "choice", CourseKind.MAJOR)))
+                    .orElseGet(List::of);
+        }
+
+        // Explicit courses and "or/and" expressions in sample plan lines are parsed here.
+        if (!codes.isEmpty()) {
+            List<AssignedCourse> assignments = new ArrayList<>();
+
+            if (normalized.contains(" or ")) {
+                Optional<String> chosen = pickFirstAvailable(codes, completedCourses, season);
+                chosen.ifPresent(code -> assignments.add(new AssignedCourse(code, rawLabel, "Sample Plan Course", "required", classifyKind(code))));
+                return assignments;
+            }
+
+            for (String code : codes) {
+                if (completedCourses.contains(code)) {
+                    continue;
+                }
+                assignments.add(new AssignedCourse(code, rawLabel, "Sample Plan Course", "required", classifyKind(code)));
+            }
+
+            return assignments;
+        }
+
+        return List.of();
+    }
+
+    private RequirementPools extractRequirementPools(JsonNode root) {
+        List<String> huma = new ArrayList<>();
+        List<String> social = new ArrayList<>();
+        List<String> ssft = new ArrayList<>();
+        List<String> technical = new ArrayList<>();
+        List<String> majorAlternatives = new ArrayList<>();
+
+        for (JsonNode category : root.path("requirementCategories")) {
+            String title = category.path("title").asText("").toLowerCase(Locale.ROOT);
+
+            List<String> directCourses = extractCourseCodes(category.path("courses"));
+            List<String> selectionCourses = extractCourseCodes(category.path("selection").path("from"));
+
+            if (title.contains("humanities")) {
+                huma.addAll(directCourses);
+            }
+
+            if (title.contains("social science")) {
+                social.addAll(selectionCourses);
+            }
+
+            if (title.contains("science, faith")) {
+                ssft.addAll(selectionCourses);
+            }
+
+            if (title.contains("technical elective")) {
+                technical.addAll(selectionCourses);
+            }
+
+            // Major alternatives collected from selection and selectionGroups to support replacement logic.
+            majorAlternatives.addAll(selectionCourses);
+            category.path("selectionGroups").forEach(group -> majorAlternatives.addAll(extractCourseCodes(group.path("from"))));
+        }
+
+        List<String> fillers = new ArrayList<>();
+        fillers.addAll(huma);
+        fillers.addAll(social);
+        fillers.addAll(ssft);
+        fillers.addAll(technical);
+
+        return new RequirementPools(
+                distinctList(huma),
+                distinctList(social),
+                distinctList(ssft),
+                distinctList(technical),
+                distinctList(majorAlternatives),
+                distinctList(fillers)
+        );
+    }
+
+    private Map<String, Integer> extractCreditsByCode(JsonNode root) {
+        Map<String, Integer> creditsByCode = new HashMap<>();
+
+        for (JsonNode category : root.path("requirementCategories")) {
+            putCreditsFromNodes(creditsByCode, category.path("courses"));
+            putCreditsFromNodes(creditsByCode, category.path("selection").path("from"));
+            category.path("selectionGroups").forEach(group -> putCreditsFromNodes(creditsByCode, group.path("from")));
+        }
+
+        return creditsByCode;
+    }
+
+    private void putCreditsFromNodes(Map<String, Integer> creditsByCode, JsonNode nodes) {
+        if (!nodes.isArray()) {
+            return;
+        }
+
+        for (JsonNode node : nodes) {
+            if (node.path("subject").isTextual() && node.path("number").canConvertToInt()) {
+                String code = buildCourseCode(node.path("subject").asText(), node.path("number").asInt());
+                int credits = node.path("credits").asInt(3);
+                creditsByCode.putIfAbsent(code, credits);
+            }
+
+            if (node.path("bundle").isArray()) {
+                for (JsonNode bundled : node.path("bundle")) {
+                    if (bundled.path("subject").isTextual() && bundled.path("number").canConvertToInt()) {
+                        String code = buildCourseCode(bundled.path("subject").asText(), bundled.path("number").asInt());
+                        creditsByCode.putIfAbsent(code, 3);
+                    }
+                }
+            }
+        }
+    }
+
+    private List<String> extractCourseCodes(JsonNode nodes) {
+        if (!nodes.isArray()) {
+            return List.of();
+        }
+
+        List<String> codes = new ArrayList<>();
+        for (JsonNode node : nodes) {
+            if (node.path("subject").isTextual() && node.path("number").canConvertToInt()) {
+                codes.add(buildCourseCode(node.path("subject").asText(), node.path("number").asInt()));
+            }
+
+            if (node.path("subject").isTextual() && node.path("numbers").isArray()) {
+                String subject = node.path("subject").asText();
+                node.path("numbers").forEach(numberNode -> {
+                    if (numberNode.canConvertToInt()) {
+                        codes.add(buildCourseCode(subject, numberNode.asInt()));
+                    }
+                });
+            }
+
+            if (node.path("bundle").isArray()) {
+                node.path("bundle").forEach(bundleNode -> {
+                    if (bundleNode.path("subject").isTextual() && bundleNode.path("number").canConvertToInt()) {
+                        codes.add(buildCourseCode(bundleNode.path("subject").asText(), bundleNode.path("number").asInt()));
+                    }
+                });
+            }
+        }
+        return distinctList(codes);
+    }
+
+    private Optional<String> pickFirstAvailable(List<String> courseCodes, Set<String> completedCourses, String season) {
+        return courseCodes.stream()
+                .map(this::normalizeCourseCode)
+                .filter(StringUtils::hasText)
+                .filter(code -> !completedCourses.contains(code))
+                .filter(code -> isCourseOfferedInSeason(code, season))
+                .findFirst();
+    }
+
+    private boolean isCourseOfferedInSeason(String courseCode, String season) {
+        ParsedCode parsed = parseCourseCode(courseCode);
+        if (parsed == null) {
+            return false;
+        }
+
+        List<CourseSection> sections = courseSectionRepository.findBySubjectIgnoreCaseAndNumber(parsed.subject(), parsed.number());
+        if (sections.isEmpty()) {
+            // Treat unknown courses as potentially available so requirement-only courses are not auto-rejected.
+            return true;
+        }
+
+        return sections.stream()
+                .map(CourseSection::getSemester)
+                .anyMatch(semester -> seasonMatches(semester, season));
+    }
+
+    private boolean seasonMatches(String semester, String requestedSeason) {
+        if (!StringUtils.hasText(semester)) {
+            return false;
+        }
+
+        String normalized = semester.toLowerCase(Locale.ROOT);
+        if ("fall".equalsIgnoreCase(requestedSeason)) {
+            return normalized.contains("fall");
+        }
+        return normalized.contains("spring");
+    }
+
+    private Optional<Integer> resolveSelectedTermIndex(String semesterLabel) {
+        String normalized = semesterLabel.toLowerCase(Locale.ROOT).trim();
+        if (TERM_INDEX_BY_LABEL.containsKey(normalized)) {
+            return Optional.of(TERM_INDEX_BY_LABEL.get(normalized));
+        }
+
+        return Optional.empty();
+    }
+
+    private String normalizeSemesterLabel(String semester) {
+        if (!StringUtils.hasText(semester)) {
+            return "";
+        }
+
+        String compact = semester.trim().replace('_', ' ');
+        return Arrays.stream(compact.split("\\s+"))
+                .map(token -> token.substring(0, 1).toUpperCase(Locale.ROOT) + token.substring(1).toLowerCase(Locale.ROOT))
+                .collect(Collectors.joining(" "));
+    }
+
+    private Optional<String> resolveCatalogSemesterForSeason(String season) {
+        return courseSectionRepository.findDistinctSemesters().stream()
+                .filter(semester -> seasonMatches(semester, season))
+                .sorted()
+                .reduce((first, second) -> second);
+    }
+
+    private String seasonForTermIndex(int termIndex) {
+        return termIndex % 2 == 0 ? "Fall" : "Spring";
+    }
+
+    private boolean conflictsWithOccupied(CourseSection section, Set<ClassTimeKey> occupied) {
+        for (ClassTime time : Optional.ofNullable(section.getTimes()).orElseGet(List::of)) {
+            ClassTimeKey key = new ClassTimeKey(
+                    time.getDay(),
+                    time.getStartTime() == null ? null : time.getStartTime().toSecondOfDay(),
+                    time.getEndTime() == null ? null : time.getEndTime().toSecondOfDay()
+            );
+
+            for (ClassTimeKey existing : occupied) {
+                if (existing.conflictsWith(key)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private void markOccupied(CourseSection section, Set<ClassTimeKey> occupied) {
+        for (ClassTime time : Optional.ofNullable(section.getTimes()).orElseGet(List::of)) {
+            occupied.add(new ClassTimeKey(
+                    time.getDay(),
+                    time.getStartTime() == null ? null : time.getStartTime().toSecondOfDay(),
+                    time.getEndTime() == null ? null : time.getEndTime().toSecondOfDay()
+            ));
+        }
+    }
+
+    private int creditForCourse(String courseCode, Map<String, Integer> creditsByCourseCode) {
+        if (creditsByCourseCode.containsKey(courseCode)) {
+            return creditsByCourseCode.get(courseCode);
+        }
+
+        ParsedCode parsed = parseCourseCode(courseCode);
+        if (parsed == null) {
+            return 3;
+        }
+
+        return courseSectionRepository.findBySubjectIgnoreCaseAndNumber(parsed.subject(), parsed.number()).stream()
+                .map(CourseSection::getCredits)
+                .filter(credits -> credits > 0)
+                .findFirst()
+                .orElse(3);
+    }
+
+    private List<String> parseCourseTokens(String text) {
+        List<String> result = new ArrayList<>();
+        Matcher matcher = COURSE_TOKEN_PATTERN.matcher(text.toUpperCase(Locale.ROOT));
+        while (matcher.find()) {
+            result.add("%s %s".formatted(matcher.group(1), matcher.group(2)));
+        }
+        return distinctList(result);
+    }
+
+    private ParsedCode parseCourseCode(String code) {
+        String normalized = normalizeCourseCode(code);
+        Matcher matcher = COURSE_CODE_PATTERN.matcher(normalized);
+        if (!matcher.matches()) {
+            return null;
+        }
+        try {
+            return new ParsedCode(matcher.group(1), Integer.parseInt(matcher.group(2).replaceAll("[^0-9]", "")));
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
+    }
+
+    private CourseKind classifyKind(String courseCode) {
+        return courseCode.startsWith("HUMA ") ? CourseKind.HUMA : CourseKind.MAJOR;
+    }
+
+    private List<String> distinctList(List<String> values) {
+        return values.stream().map(this::normalizeCourseCode).filter(StringUtils::hasText).distinct().toList();
     }
 
     private Set<String> normalizeCompletedCourses(List<String> completedCourses) {
@@ -210,16 +853,6 @@ public class RecommendationService {
         return "%s %d".formatted(subject.toUpperCase(Locale.ROOT), number);
     }
 
-    private CourseSection choosePreferredSection(List<CourseSection> sections) {
-        return sections.stream()
-                .sorted(Comparator
-                        .comparing((CourseSection section) -> !section.isOpen())
-                        .thenComparing(Comparator.comparingInt(CourseSection::getOpenSeats).reversed())
-                        .thenComparing(section -> section.getSection() == null ? "" : section.getSection()))
-                .findFirst()
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No matching course section found"));
-    }
-
     private CourseSectionDTO toDto(CourseSection section) {
         return new CourseSectionDTO(
                 section.getId(),
@@ -239,12 +872,127 @@ public class RecommendationService {
         );
     }
 
-    private record ProgramCourseCandidate(
-            String subject,
-            int number,
-            String courseTitle,
-            String requirementCategory,
-            String recommendationType
+    private record RequirementPools(
+            List<String> humaCodes,
+            List<String> socialScienceCodes,
+            List<String> ssftCodes,
+            List<String> technicalElectiveCodes,
+            List<String> majorAlternatives,
+            List<String> electiveOrGeneralFillers
     ) {
+    }
+
+    private enum CourseKind {
+        MAJOR,
+        HUMA,
+        ELECTIVE
+    }
+
+    private record AssignedCourse(
+            String courseCode,
+            String title,
+            String requirementCategory,
+            String recommendationType,
+            CourseKind kind
+    ) {
+    }
+
+    private static final class PlanTerm {
+        private final String label;
+        private final LinkedHashMap<String, AssignedCourse> courses = new LinkedHashMap<>();
+
+        private PlanTerm(String label) {
+            this.label = label;
+        }
+
+        private void addCourse(AssignedCourse course) {
+            this.courses.putIfAbsent(course.courseCode(), course);
+        }
+
+        private void removeCourse(String courseCode) {
+            this.courses.remove(courseCode);
+        }
+
+        private boolean containsCourse(String courseCode) {
+            return this.courses.containsKey(courseCode);
+        }
+
+        private List<AssignedCourse> courses() {
+            return new ArrayList<>(this.courses.values());
+        }
+
+        private int courseCountByKind(CourseKind kind) {
+            return (int) this.courses.values().stream().filter(course -> course.kind() == kind).count();
+        }
+
+        private Optional<AssignedCourse> firstCourseOfKinds(List<CourseKind> kinds) {
+            return this.courses.values().stream()
+                    .filter(course -> kinds.contains(course.kind()))
+                    .findFirst();
+        }
+
+        private Optional<AssignedCourse> findMovableMajor() {
+            return this.courses.values().stream()
+                    .filter(course -> course.kind() == CourseKind.MAJOR)
+                    .findFirst();
+        }
+
+        private int totalCredits(Map<String, Integer> creditsByCourseCode) {
+            int total = 0;
+            for (AssignedCourse course : this.courses.values()) {
+                total += creditsByCourseCode.getOrDefault(course.courseCode(), 3);
+            }
+            return total;
+        }
+
+        private boolean tryReplaceForBacklog(
+                AssignedCourse backlog,
+                Map<String, Integer> creditsByCourseCode,
+                int minCredits,
+                int maxCredits
+        ) {
+            for (CourseKind candidateKind : List.of(CourseKind.ELECTIVE, CourseKind.HUMA)) {
+                Optional<AssignedCourse> replaceable = this.courses.values().stream()
+                        .filter(course -> course.kind() == candidateKind)
+                        .findFirst();
+
+                if (replaceable.isEmpty()) {
+                    continue;
+                }
+
+                AssignedCourse existing = replaceable.get();
+                int existingCredits = creditsByCourseCode.getOrDefault(existing.courseCode(), 3);
+                int backlogCredits = creditsByCourseCode.getOrDefault(backlog.courseCode(), 3);
+                int projected = totalCredits(creditsByCourseCode) - existingCredits + backlogCredits;
+                if (projected < minCredits - 1 || projected > maxCredits + 1) {
+                    continue;
+                }
+
+                removeCourse(existing.courseCode());
+                addCourse(backlog);
+                return true;
+            }
+
+            return false;
+        }
+    }
+
+    private record ParsedCode(String subject, int number) {
+    }
+
+    private record ClassTimeKey(String day, Integer startSecond, Integer endSecond) {
+        private boolean conflictsWith(ClassTimeKey other) {
+            if (!StringUtils.hasText(day) || !StringUtils.hasText(other.day)) {
+                return false;
+            }
+            if (!day.equalsIgnoreCase(other.day)) {
+                return false;
+            }
+            if (startSecond == null || endSecond == null || other.startSecond == null || other.endSecond == null) {
+                return false;
+            }
+
+            return startSecond < other.endSecond && other.startSecond < endSecond;
+        }
     }
 }

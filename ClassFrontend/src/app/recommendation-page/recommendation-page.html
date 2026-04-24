@@ -67,6 +67,27 @@
       Program: {{ recommendationResponse.programCode }} | Semester: {{ recommendationResponse.semester }}
     </p>
 
+    <div *ngIf="recommendationResponse.canGraduateOnTime" class="panel-success">
+      On-time graduation status: On track
+    </div>
+    <div *ngIf="!recommendationResponse.canGraduateOnTime" class="panel-error">
+      On-time graduation status: At risk
+    </div>
+
+    <div *ngIf="recommendationResponse.planningNotes.length" class="panel panel-notes">
+      <h3>Planning Notes</h3>
+      <ul>
+        <li *ngFor="let note of recommendationResponse.planningNotes">{{ note }}</li>
+      </ul>
+    </div>
+
+    <div *ngIf="recommendationResponse.blockingIssues.length" class="panel panel-error">
+      <h3>Blocking Issues</h3>
+      <ul>
+        <li *ngFor="let issue of recommendationResponse.blockingIssues">{{ issue }}</li>
+      </ul>
+    </div>
+
     <!-- Courses not offered in the selected semester -->
     <div *ngIf="recommendationResponse.unavailableCourseCodes.length > 0" class="panel-warning">
       Not offered this semester: {{ recommendationResponse.unavailableCourseCodes.join(', ') }}

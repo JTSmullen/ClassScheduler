@@ -28,4 +28,8 @@ public interface CourseSectionRepository extends JpaRepository<CourseSection, Lo
 
     @Query("SELECT DISTINCT f FROM CourseSection c JOIN c.faculty f")
     Set<String> findDistinctFaculty();
+
+    List<CourseSection> findBySubjectIgnoreCaseAndNumber(String subject, int number);
+
+    List<CourseSection> findBySubjectIgnoreCaseAndNumberAndSemester(String subject, int number, String semester);
 }

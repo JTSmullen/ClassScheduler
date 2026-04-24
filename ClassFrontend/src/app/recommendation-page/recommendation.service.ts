@@ -46,6 +46,9 @@ export interface RecommendationResponse {
   completedCourses: string[];
   recommendations: RecommendedCourse[];
   unavailableCourseCodes: string[];
+  canGraduateOnTime: boolean;
+  planningNotes: string[];
+  blockingIssues: string[];
 }
 
 @Injectable({
