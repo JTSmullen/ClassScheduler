@@ -31,7 +31,7 @@ export class LoginPage {
         next: (response) => {
           localStorage.setItem('auth_token', response.token);
 
-          this.authService.fetchUserInfo(response.token).subscribe({
+          this.authService.fetchUserInfo().subscribe({
             next: (user: UserInfo) => {
               localStorage.setItem(
                 'current_user',

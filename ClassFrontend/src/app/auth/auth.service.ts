@@ -18,8 +18,8 @@ export interface UserInfo {
   providedIn: 'root',
 })
 export class AuthService {
-  private readonly AUTH_URL = 'https://lfrgiy6ixwc3psnimphcam4npa0rxxbq.lambda-url.us-east-2.on.aws/api/v1/auth';
-  private readonly USER_URL = 'https://lfrgiy6ixwc3psnimphcam4npa0rxxbq.lambda-url.us-east-2.on.aws/api/v1/user';
+  private readonly AUTH_URL = 'http://localhost:8080/api/v1/auth';
+  private readonly USER_URL = 'http://localhost:8080/api/v1/user';
 
   constructor(private http: HttpClient) {}
 
@@ -37,8 +37,7 @@ export class AuthService {
     return this.http.post<LoginResponse>(`${this.AUTH_URL}/login`, payload);
   }
 
-  fetchUserInfo(token: string): Observable<UserInfo> {
-    const headers = new HttpHeaders({ Authorization: `Bearer ${token}` });
-    return this.http.get<UserInfo>(this.USER_URL, { headers });
+  fetchUserInfo(): Observable<UserInfo> {
+    return this.http.get<UserInfo>(this.USER_URL);
   }
 }

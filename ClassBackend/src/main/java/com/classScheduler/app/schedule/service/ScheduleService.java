@@ -165,6 +165,7 @@ public class ScheduleService {
         schedule.setCourseSections(new ArrayList<>());
         schedule.setHasConflict(false);
         schedule.setLastSave(new java.sql.Time(System.currentTimeMillis()));
+        schedule.setSemester(newScheduleRequest.getSemester());
 
         scheduleRepo.save(schedule);
 

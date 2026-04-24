@@ -1,9 +1,55 @@
-<h1>Welcome to the Home Page</h1>
-<p>This is my first Angular page.</p>
+<div class="home-container">
+  <header class="header-wrapper">
+    <div class="welcome-section">
+      <h1>Welcome to the Home Page</h1>
+      <p>Checkout these buttons:</p>
+    </div>
 
-<button>Search</button>
-<!-- <br>
-</br> -->
-<button>Create New Schedule</button>
-<button routerLink="/schedule">View Schedule</button>
-<button routerLink="/recommendations">Course Recommendations</button>
+    <div class="logout-container">
+      <button class="btn btn-logout" (click)="logout()">
+        Logout
+      </button>
+    </div>
+  </header>
+
+  <main class="content-card">
+    <div class="schedule-section" *ngIf="schedules().length > 0">
+      <h3 class="section-title">Your Schedules</h3>
+      <div class="schedule-grid">
+        <button
+          *ngFor="let s of schedules()"
+          class="btn btn-schedule-card"
+          (click)="navigateToSchedule(s.id)">
+          <span class="schedule-name">{{ s.name }}</span>
+          <span class="view-label">View Details →</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="button-group">
+      <button class="btn btn-outline" (click)="toggleCreate()">
+        {{ showCreate ? 'Cancel' : '+ Create New Schedule' }}
+      </button>
+    </div>
+
+    <div *ngIf="showCreate" class="create-dropdown">
+      <form (submit)="createSchedule($event)">
+        <input
+          type="text"
+          [(ngModel)]="scheduleName"
+          name="scheduleName"
+          placeholder="Enter schedule name"
+          required
+        />
+
+        <button type="submit" class="btn btn-primary" [disabled]="loading || !scheduleName">
+          {{ loading ? 'Creating...' : 'Create' }}
+        </button>
+      </form>
+
+      <p *ngIf="errorMessage" class="error">
+        {{ errorMessage }}
+      </p>
+    </div>
+  </main>
+</div>

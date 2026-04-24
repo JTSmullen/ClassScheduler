@@ -24,6 +24,9 @@ public class Schedule {
     @Column(name = "name", length = 99, nullable = false)
     private String name;
 
+    @Column(name = "name", length = 20, nullable = false)
+    private String semester;
+
     @ManyToMany
     @JoinTable(
             name = "schedule_courses",

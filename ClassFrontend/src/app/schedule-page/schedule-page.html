@@ -3,20 +3,16 @@
   <div class="header">
     <div class="header-content">
       <div class="title-section">
-        <h1>Weekly Schedule</h1>
-        <div *ngIf="!compareMode()">
-          <select
-            [value]="selectedScheduleId()"
-            (change)="onScheduleChange($event)"
-            class="schedule-selector"
-          >
-            <option *ngFor="let schedule of availableSchedules()" [value]="schedule.id">
-              {{ schedule.name }}
-            </option>
-          </select>
-        </div>
+        <h1 *ngIf="!compareMode()">{{ currentSchedule().name }}</h1>
       </div>
       <div class="controls">
+        <button
+          class="btn btn-outline"
+          (click)="openSearchPanel()"
+        >
+          <lucide-icon [img]="Plus" class="w-4 h-4"></lucide-icon>
+          Add Courses
+        </button>
         <button
           [class]="compareMode() ? 'btn btn-primary' : 'btn btn-outline'"
           (click)="toggleCompareMode()"
@@ -40,22 +36,32 @@
     <div class="compare-controls">
       <span class="compare-label">Compare:</span>
       <div class="schedule-selectors">
+        <!-- Dropdown 1: Fixed Binding -->
         <select
-          [value]="compareScheduleIds()[0]"
           (change)="onCompareSchedule1Change($event)"
           class="selector"
         >
-          <option *ngFor="let schedule of availableSchedules()" [value]="schedule.id">
+          <option 
+            *ngFor="let schedule of availableSchedules()" 
+            [value]="schedule.id"
+            [selected]="schedule.id === compareScheduleIds()[0]"
+          >
             {{ schedule.name }}
           </option>
         </select>
+        
         <span class="vs-text">vs</span>
+        
+        <!-- Dropdown 2: Fixed Binding -->
         <select
-          [value]="compareScheduleIds()[1]"
           (change)="onCompareSchedule2Change($event)"
           class="selector"
         >
-          <option *ngFor="let schedule of availableSchedules()" [value]="schedule.id">
+          <option 
+            *ngFor="let schedule of availableSchedules()" 
+            [value]="schedule.id"
+            [selected]="schedule.id === compareScheduleIds()[1]"
+          >
             {{ schedule.name }}
           </option>
         </select>
@@ -75,7 +81,15 @@
     </div>
   </div>
 
-  <!-- Search Sheet -->
+  <!-- Course Search Panel (Takes up about half the screen) -->
+  <div *ngIf="searchPanelOpen()" class="search-panel-overlay">
+    <app-course-search
+      (courseSelected)="onSearchCourseSelected($event)"
+      (closed)="onSearchPanelClosed()"
+    ></app-course-search>
+  </div>
+
+  <!-- Search Sheet (for searching existing schedule) -->
   <div *ngIf="sheetOpen()" class="search-panel">
     <div class="panel-content">
       <div class="panel-header">
@@ -139,7 +153,7 @@
     </div>
   </div>
 
-  <!-- Course Details Dialog -->
+  <!-- Course Details Dialog (for courses in schedule) -->
   <div *ngIf="selectedCourse()" class="course-dialog">
     <div class="dialog-content">
       <div class="dialog-header">
@@ -266,7 +280,160 @@
         </div>
       </div>
       <div class="dialog-footer">
+        <div *ngIf="removeError()" class="error-message">
+          {{ removeError() }}
+        </div>
+        <button 
+          class="remove-btn" 
+          (click)="removeCourse()"
+          [disabled]="removingCourse()"
+        >
+          {{ removingCourse() ? 'Removing...' : 'Remove from Schedule' }}
+        </button>
         <button class="close-btn" (click)="closeDialog()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Course Details Dialog (for searched courses) -->
+  <div *ngIf="showCourseDetails() && selectedSearchCourse()" class="course-details-dialog">
+    <div class="dialog-content add-course-dialog">
+      <div class="dialog-header">
+        <h2>{{ selectedSearchCourse()!.subject }} {{ selectedSearchCourse()!.number }}: {{ selectedSearchCourse()!.name }}</h2>
+        <button class="close-btn" (click)="closeCourseDetails()">
+          <lucide-icon [img]="X" class="icon"></lucide-icon>
+        </button>
+      </div>
+      <div class="dialog-body">
+
+        <div class="space-y-4">
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="info-label">
+                <lucide-icon [img]="BookOpen" class="icon"></lucide-icon>
+                <span>Section</span>
+              </div>
+              <div class="info-value">{{ selectedSearchCourse()!.section }}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">
+                <lucide-icon [img]="Calendar" class="icon"></lucide-icon>
+                <span>Semester</span>
+              </div>
+              <div class="info-value">{{ selectedSearchCourse()!.semester }}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">
+                <lucide-icon [img]="MapPin" class="icon"></lucide-icon>
+                <span>Location</span>
+              </div>
+              <div class="info-value">{{ selectedSearchCourse()!.location }}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">
+                <lucide-icon [img]="BookOpen" class="icon"></lucide-icon>
+                <span>Credits</span>
+              </div>
+              <div class="info-value">{{ selectedSearchCourse()!.credits }}</div>
+            </div>
+          </div>
+
+          <div class="section-divider"></div>
+
+          <div class="faculty-section">
+            <div class="section-label">
+              <lucide-icon [img]="User" class="icon"></lucide-icon>
+              <span>Faculty</span>
+            </div>
+            <div class="faculty-list">
+              <div *ngFor="let faculty of selectedSearchCourse()!.faculty" class="faculty-item">
+                {{ faculty }}
+              </div>
+            </div>
+          </div>
+
+          <div class="section-divider"></div>
+
+          <!-- Meeting Times -->
+          <div class="times-section">
+            <div class="section-label">
+              <lucide-icon [img]="Clock" class="icon"></lucide-icon>
+              <span>Meeting Times</span>
+            </div>
+            <div class="times-list">
+              <div *ngFor="let time of selectedSearchCourse()!.times" class="time-item">
+                <div class="time-day">{{ time.day }}</div>
+                <div class="time-details">
+                  {{ formatHour(parseTimeFromString(time.start_time).hour) }}
+                  <span *ngIf="parseTimeFromString(time.start_time).minute > 0">:{{
+                    parseTimeFromString(time.start_time).minute.toString().padStart(2, '0')
+                  }}</span>
+                  - {{ formatHour(parseTimeFromString(time.end_time).hour) }}
+                  <span *ngIf="parseTimeFromString(time.end_time).minute > 0">:{{
+                    parseTimeFromString(time.end_time).minute.toString().padStart(2, '0')
+                  }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-divider"></div>
+
+          <!-- Enrollment -->
+          <div class="enrollment-section">
+            <div class="section-label">
+              <lucide-icon [img]="Users" class="icon"></lucide-icon>
+              <span>Enrollment</span>
+            </div>
+            <div class="enrollment-info">
+              <div class="enrollment-stats">
+                <span class="stat-label">Available Seats</span>
+                <span class="stat-value">
+                  {{ selectedSearchCourse()!.open_seats }} / {{ selectedSearchCourse()!.total_seats }}
+                </span>
+              </div>
+              <div class="progress-bar">
+                <div
+                  class="progress-fill"
+                  [class.available]="selectedSearchCourse()!.open_seats > 0"
+                  [class.full]="selectedSearchCourse()!.open_seats <= 0"
+                  [style.width.%]="((selectedSearchCourse()!.total_seats - selectedSearchCourse()!.open_seats) / selectedSearchCourse()!.total_seats) * 100"
+                ></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Badges -->
+          <div class="badges">
+            <span *ngIf="selectedSearchCourse()!.is_lab" class="badge lab-badge">Lab Course</span>
+            <span
+              *ngIf="selectedSearchCourse()!.is_open"
+              class="badge open-badge"
+            >
+              Open
+            </span>
+            <span
+              *ngIf="!selectedSearchCourse()!.is_open"
+              class="badge closed-badge"
+            >
+              Closed
+            </span>
+          </div>
+        </div>
+      </div>
+      <div class="dialog-footer">
+        <div *ngIf="addCourseError()" class="error-message">
+          {{ addCourseError() }}
+        </div>
+        <button 
+          class="add-btn" 
+          (click)="addCourseToSchedule()"
+          [disabled]="addingCourse()"
+        >
+          <lucide-icon [img]="Plus" class="icon"></lucide-icon>
+          {{ addingCourse() ? 'Adding...' : 'Add to Schedule' }}
+        </button>
+        <button class="close-btn" (click)="closeCourseDetails()">Cancel</button>
       </div>
     </div>
   </div>
