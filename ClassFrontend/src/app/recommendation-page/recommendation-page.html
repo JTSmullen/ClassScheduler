@@ -1,0 +1,95 @@
+<div class="recommendation-page">
+  <!-- Page heading and top-level navigation back to authenticated home -->
+  <div class="page-header">
+    <div>
+      <h1>Course Recommendations</h1>
+      <p>
+        Enter completed courses, choose a semester and program sheet, then generate a suggested schedule.
+      </p>
+    </div>
+    <a class="back-link" routerLink="/home">Back to Home</a>
+  </div>
+
+  <!-- State: options are loading from backend -->
+  <div class="panel" *ngIf="loadingOptions">Loading recommendation options...</div>
+  <!-- State: options request failed -->
+  <div class="panel panel-error" *ngIf="optionsError">{{ optionsError }}</div>
+
+  <!-- Main request form: shown once options are available -->
+  <form class="panel form-panel" *ngIf="!loadingOptions" (submit)="handleGenerateSchedule($event)">
+    <!-- Completed courses are entered as comma-separated text and parsed in TS -->
+    <label for="completedCourses">Completed Course Codes</label>
+    <textarea
+      id="completedCourses"
+      rows="4"
+      placeholder="MATH 141, COMP 222, HUMA 200"
+      [value]="completedCoursesText"
+      (input)="completedCoursesText = $any($event.target).value"
+    ></textarea>
+    <small>Comma-separated values are parsed into an array.</small>
+
+    <!-- Live preview of parsed course code array -->
+    <div class="inline-list" *ngIf="parsedCourseCodes.length > 0">
+      <span class="pill" *ngFor="let code of parsedCourseCodes">{{ code }}</span>
+    </div>
+
+    <!-- Semester selection -->
+    <label for="semester">Semester</label>
+    <select id="semester" [value]="selectedSemester" (change)="selectedSemester = $any($event.target).value">
+      <option value="" disabled>Select a semester</option>
+      <option *ngFor="let semester of semesters" [value]="semester">{{ semester }}</option>
+    </select>
+
+    <!-- Program sheet selection (dropdown allows adding more sheets later) -->
+    <label for="programSheet">Major Program Sheet</label>
+    <select
+      id="programSheet"
+      [value]="selectedProgramCode"
+      (change)="selectedProgramCode = $any($event.target).value"
+    >
+      <option value="" disabled>Select a program sheet</option>
+      <option *ngFor="let sheet of programSheets" [value]="sheet.programCode">{{ sheet.label }}</option>
+    </select>
+
+    <!-- Submit button reflects loading state and disables when form is incomplete -->
+    <button type="submit" [disabled]="!canGenerateSchedule">
+      {{ generatingSchedule ? 'Generating Schedule...' : 'Generate Schedule' }}
+    </button>
+
+    <!-- State: recommendation request failed -->
+    <div class="panel-error" *ngIf="requestError">{{ requestError }}</div>
+  </form>
+
+  <!-- Results panel appears only after backend responds successfully -->
+  <div class="panel" *ngIf="recommendationResponse">
+    <h2>Generated Schedule Results</h2>
+    <p>
+      Program: {{ recommendationResponse.programCode }} | Semester: {{ recommendationResponse.semester }}
+    </p>
+
+    <!-- Courses not offered in the selected semester -->
+    <div *ngIf="recommendationResponse.unavailableCourseCodes.length > 0" class="panel-warning">
+      Not offered this semester: {{ recommendationResponse.unavailableCourseCodes.join(', ') }}
+    </div>
+
+    <!-- Empty response state -->
+    <div *ngIf="recommendationResponse.recommendations.length === 0">
+      No recommendations were returned for this request.
+    </div>
+
+    <!-- Non-empty response state -->
+    <div class="recommendation-list" *ngIf="recommendationResponse.recommendations.length > 0">
+      <article class="recommendation-card" *ngFor="let item of recommendationResponse.recommendations">
+        <h3>{{ item.courseCode }}</h3>
+        <p>{{ item.courseTitle }}</p>
+        <p>
+          {{ item.requirementCategory }} | {{ item.recommendationType }}
+        </p>
+        <p *ngIf="item.section">
+          Section {{ item.section.section }} - {{ item.section.subject }} {{ item.section.number }} -
+          {{ item.section.location }}
+        </p>
+      </article>
+    </div>
+  </div>
+</div>
