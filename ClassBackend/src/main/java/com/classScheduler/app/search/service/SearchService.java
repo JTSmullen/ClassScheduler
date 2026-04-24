@@ -67,11 +67,13 @@ public class SearchService {
         // build results DTO
         Set<SearchItemDTO> resultsDTO = buildSearchResultsDTO(results);
 
+        FilterOptionsDTO filterOptionsDTO = buildFilterOptionsDTO(results);
+
         // return search results and
-        return new SearchResponseDTO(resultsDTO, resultsPage.getNumber(), resultsPage.getTotalPages(), resultsPage.getTotalElements());
+        return new SearchResponseDTO(resultsDTO, filterOptionsDTO, resultsPage.getNumber(), resultsPage.getTotalPages(), resultsPage.getTotalElements());
     }
 
-    // helper method to build SearchI
+    // helper method to build Search
     private Set<SearchItemDTO> buildSearchResultsDTO(Set<CourseSection> results) {
         List<SearchItemDTO> resultsDTOList = results.stream()
                 .map(result -> new SearchItemDTO(
@@ -91,13 +93,33 @@ public class SearchService {
         return resultsDTO;
     }
 
-    @Transactional(readOnly = true)
-    public FilterOptionsDTO buildFilterOptionsDTO() {
-        Set<String> semesters = courseSectionRepository.findDistinctSemesters();
-        Set<String> subjects = courseSectionRepository.findDistinctSubjects();
-        Set<Integer> numbers = courseSectionRepository.findDistinctNumbers();
-        Set<Integer> credits = courseSectionRepository.findDistinctCredits();
-        Set<String> faculty = courseSectionRepository.findDistinctFaculty();
+    // use TreeSet to sort filter options
+    private FilterOptionsDTO buildFilterOptionsDTO(Set<CourseSection> sections) {
+        Set<String> semesters = sections.stream()
+                .map(CourseSection::getSemester)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toCollection(TreeSet::new));
+
+        Set<String> subjects = sections.stream()
+                .map(CourseSection::getSubject)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toCollection(TreeSet::new));
+
+        Set<Integer> numbers = sections.stream()
+                .map(CourseSection::getNumber)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toCollection(TreeSet::new));
+
+        Set<Integer> credits = sections.stream()
+                .map(CourseSection::getCredits)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toCollection(TreeSet::new));
+
+        Set<String> faculty = sections.stream()
+                .filter(c -> c.getFaculty() != null)
+                .flatMap(c -> c.getFaculty().stream())
+                .filter(Objects::nonNull)
+                .collect(Collectors.toCollection(TreeSet::new));
 
         return new FilterOptionsDTO(semesters, subjects, numbers, credits, faculty);
     }

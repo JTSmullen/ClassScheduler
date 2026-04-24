@@ -30,7 +30,7 @@ public class SearchController {
         this.searchService = searchService;
     }
 
-    @PostMapping("/filter")
+    @GetMapping("/filter")
     // @RequestBody used when data is sent as JSON in the request body
     // Include default page number and size. Embed these parameters in the URL but DTO in JSON body
     public ResponseEntity<SearchResponseDTO> searchAndFilter(@RequestBody SearchFilterDTO filters, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "50") int size) {
@@ -44,10 +44,5 @@ public class SearchController {
     // @PathVariable extracts the value from the URL path
     public ResponseEntity<CourseSectionDTO> searchResultDetails(@PathVariable Long id) {
         return ResponseEntity.ok(searchService.getCourseDetails(id));
-    }
-
-    @GetMapping("/filter/options")
-    public ResponseEntity<FilterOptionsDTO> getFilterOptionsDTO() {
-        return ResponseEntity.ok(searchService.buildFilterOptionsDTO());
     }
 }
