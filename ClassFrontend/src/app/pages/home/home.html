@@ -33,23 +33,29 @@
     </div>
 
     <div *ngIf="showCreate" class="create-dropdown">
-      <form (submit)="createSchedule($event)">
-        <input
-          type="text"
-          [(ngModel)]="scheduleName"
-          name="scheduleName"
-          placeholder="Enter schedule name"
-          required
-        />
+  <form (submit)="createSchedule($event)">
+    <input
+      type="text"
+      [(ngModel)]="scheduleName"
+      name="scheduleName"
+      placeholder="Enter schedule name"
+      required
+    />
 
-        <button type="submit" class="btn btn-primary" [disabled]="loading || !scheduleName">
-          {{ loading ? 'Creating...' : 'Create' }}
-        </button>
-      </form>
+    <select [(ngModel)]="scheduleSemester" name="scheduleSemester" required>
+      <option value="" disabled selected>Select Semester</option>
+      <option value="Fall">Fall</option>
+      <option value="Spring">Spring</option>
+    </select>
 
-      <p *ngIf="errorMessage" class="error">
-        {{ errorMessage }}
-      </p>
-    </div>
+    <button type="submit" class="btn btn-primary" [disabled]="loading || !scheduleName || !scheduleSemester">
+      {{ loading ? 'Creating...' : 'Create' }}
+    </button>
+  </form>
+
+  <p *ngIf="errorMessage" class="error">
+    {{ errorMessage }}
+  </p>
+</div>
   </main>
 </div>

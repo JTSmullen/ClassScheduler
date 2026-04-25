@@ -17,6 +17,7 @@ export class Home implements OnInit {
   schedules = signal<any[]>([]);
   showCreate = false;
   scheduleName = '';
+  scheduleSemester = '';
   loading = false;
   errorMessage = '';
 
@@ -73,7 +74,7 @@ export class Home implements OnInit {
     this.errorMessage = '';
     this.loading = true;
 
-    const newSchedule = { name: this.scheduleName };
+    const newSchedule = { name: this.scheduleName, semester: this.scheduleSemester };
 
     this.http
       .post<any>('http://localhost:8080/api/v1/schedule/create', newSchedule)
