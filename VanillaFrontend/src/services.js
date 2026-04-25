@@ -188,3 +188,11 @@ export function filterSearchResults(filterPayload) {
 export function getFilterOptions() {
   return getJson('/search/filter/options');
 }
+
+export function getRecommendationOptions() {
+  return getJson('/recommendations/options');
+}
+
+export function requestCourseRecommendations(data) {
+  return postJson('/recommendations', data);
+}

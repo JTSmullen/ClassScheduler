@@ -1,0 +1,627 @@
+{
+  "programCode": "gcc-bs-physics-computer-software-2025",
+  "institutionName": "Grove City College",
+  "programTitle": "B.S. in Physics/Computer with Software Option",
+  "degreeName": "Bachelor of Science",
+  "entryYear": 2025,
+  "revisedDate": "2025-02-25",
+  "totalHoursRequired": 128,
+  "generalEducationAndElectiveHours": {
+    "min": 38,
+    "max": 40
+  },
+  "legend": [
+    "WI = Writing Intensive",
+    "SI = Speaking Intensive",
+    "IL = Information Literacy"
+  ],
+  "requirementCategories": [
+    {
+      "title": "Humanities Core",
+      "hours": {
+        "min": 18,
+        "max": 18
+      },
+      "courses": [
+        {
+          "subject": "HUMA",
+          "number": 100,
+          "title": "The Humanities: Christian Wisdom",
+          "credits": 1
+        },
+        {
+          "subject": "HUMA",
+          "number": 200,
+          "title": "Western Civilization",
+          "credits": 3
+        },
+        {
+          "subject": "HUMA",
+          "number": 202,
+          "title": "Civilization and Literature",
+          "credits": 3
+        },
+        {
+          "subject": "HUMA",
+          "number": 204,
+          "title": "Civilization and the Arts",
+          "credits": 3
+        },
+        {
+          "subject": "HUMA",
+          "number": 261,
+          "title": "Scripture and Theology for the Christian Life I",
+          "credits": 3
+        },
+        {
+          "subject": "HUMA",
+          "number": 271,
+          "title": "Scripture and Theology for the Christian Life II",
+          "credits": 3
+        },
+        {
+          "subject": "HUMA",
+          "number": 300,
+          "title": "Gospel and the Good Life: Christian Ethics",
+          "credits": 2
+        }
+      ]
+    },
+    {
+      "title": "Writing Requirement",
+      "hours": {
+        "min": 3,
+        "max": 3
+      },
+      "courses": [
+        {
+          "subject": "WRIT",
+          "number": 101,
+          "title": "Foundations of Academic Discourse",
+          "credits": 3,
+          "attributes": [
+            "WI",
+            "IL"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Foundations of the Social Sciences",
+      "hours": {
+        "min": 3,
+        "max": 3
+      },
+      "selection": {
+        "choose": 1,
+        "from": [
+          {
+            "subject": "ECON",
+            "number": 120,
+            "title": "Foundations of Economics"
+          },
+          {
+            "subject": "HIST",
+            "number": 120,
+            "title": "Foundations of History"
+          },
+          {
+            "subject": "HIST",
+            "number": 204,
+            "title": "Historical and Philosophical Foundations of Education"
+          },
+          {
+            "subject": "POLS",
+            "number": 101,
+            "title": "Foundations of Political Science"
+          },
+          {
+            "subject": "PSYC",
+            "number": 101,
+            "title": "Foundations of Psychology"
+          },
+          {
+            "subject": "PSYC",
+            "number": 200,
+            "title": "Cross-Cultural Psychology"
+          },
+          {
+            "subject": "SOCW",
+            "number": 101,
+            "title": "Foundations of Social Work"
+          },
+          {
+            "subject": "SOCI",
+            "number": 101,
+            "title": "Foundations of Sociology"
+          },
+          {
+            "subject": "SOCI",
+            "number": 103,
+            "title": "Foundations of Cultural Anthropology"
+          }
+        ]
+      }
+    },
+    {
+      "title": "Natural Science / Quantitative / Logical Reasoning",
+      "hours": {
+        "min": 0,
+        "max": 0
+      },
+      "notes": [
+        "Met through major"
+      ]
+    },
+    {
+      "title": "Studies in Science, Faith, and Technology",
+      "hours": {
+        "min": 2,
+        "max": 2
+      },
+      "selection": {
+        "choose": 1,
+        "from": [
+          {
+            "subject": "COMP",
+            "number": 205,
+            "crossListedWith": "SSFT 205",
+            "title": "Ethics, Faith, and the Conscious Mind"
+          },
+          {
+            "subject": "PHIL",
+            "number": 243,
+            "title": "Science and the Human: Inquiry, Design, and the Person"
+          },
+          {
+            "subject": "SSFT",
+            "number": 210,
+            "title": "Science and Religion"
+          },
+          {
+            "subject": "SSFT",
+            "number": 212,
+            "title": "Science, Faith, Technology, and Origins"
+          }
+        ]
+      }
+    },
+    {
+      "title": "General Electives",
+      "hours": {
+        "min": 12,
+        "max": 14
+      }
+    },
+    {
+      "title": "Physics Core Requirements",
+      "hours": {
+        "min": 40,
+        "max": 40
+      },
+      "courses": [
+        {
+          "subject": "PHYS",
+          "number": 101,
+          "title": "General Physics I - Engineering",
+          "credits": 4
+        },
+        {
+          "subject": "PHYS",
+          "number": 102,
+          "title": "General Physics II - Engineering",
+          "credits": 4
+        },
+        {
+          "subject": "PHYS",
+          "number": 135,
+          "title": "Horizons in Physics",
+          "credits": 1
+        },
+        {
+          "subject": "PHYS",
+          "number": 234,
+          "title": "Modern Physics",
+          "credits": 3
+        },
+        {
+          "subject": "PHYS",
+          "number": 242,
+          "title": "Introductions to Theoretical Physics",
+          "credits": 3
+        },
+        {
+          "subject": "PHYS",
+          "number": 288,
+          "title": "Intermediate Laboratory",
+          "credits": 2,
+          "attributes": [
+            "WI"
+          ]
+        },
+        {
+          "subject": "PHYS",
+          "number": 303,
+          "title": "Mechanics I",
+          "credits": 3
+        },
+        {
+          "subject": "PHYS",
+          "number": 321,
+          "title": "Radiation Laboratory",
+          "credits": 2,
+          "attributes": [
+            "SI",
+            "IL"
+          ]
+        },
+        {
+          "subject": "PHYS",
+          "number": 442,
+          "title": "Computational Methods in Physics",
+          "credits": 3
+        },
+        {
+          "subject": "ASTR",
+          "number": 207,
+          "title": "Introduction to Stars, Galaxies, and Cosmology",
+          "credits": 3
+        },
+        {
+          "subject": "COMP",
+          "number": 141,
+          "title": "Computer Programming I",
+          "credits": 3
+        },
+        {
+          "subject": "COMP",
+          "number": 244,
+          "title": "Database Management Systems",
+          "credits": 3
+        },
+        {
+          "subject": "COMP",
+          "number": 342,
+          "title": "Data Communication and Networking",
+          "credits": 3
+        },
+        {
+          "subject": "COMP",
+          "number": 424,
+          "title": "Parallel and Distributed Computing",
+          "credits": 3
+        }
+      ]
+    },
+    {
+      "title": "Technical Electives",
+      "hours": {
+        "min": 3,
+        "max": 3
+      },
+      "selection": {
+        "choose": 1,
+        "from": [
+          {
+            "subject": "PHYS",
+            "number": 304,
+            "title": "Mechanics II"
+          },
+          {
+            "subject": "PHYS",
+            "number": 305,
+            "title": "Electricity and Magnetism"
+          },
+          {
+            "subject": "PHYS",
+            "number": 340,
+            "title": "Thermodynamics and Statistical Mechanics"
+          },
+          {
+            "subject": "PHYS",
+            "number": 421,
+            "title": "Advanced Topics"
+          },
+          {
+            "subject": "PHYS",
+            "number": 431,
+            "title": "Quantum Mechanics"
+          },
+          {
+            "subject": "ASTR",
+            "number": 310,
+            "title": "Astrophysics"
+          }
+        ]
+      }
+    },
+    {
+      "title": "Computer Software Requirements",
+      "hours": {
+        "min": 25,
+        "max": 27
+      },
+      "courses": [
+        {
+          "subject": "COMP",
+          "number": 220,
+          "title": "Computer Programming II",
+          "credits": 3
+        },
+        {
+          "subject": "COMP",
+          "number": 222,
+          "title": "Introduction to Data Structures and Algorithms",
+          "credits": 3
+        },
+        {
+          "subject": "COMP",
+          "number": 325,
+          "title": "Computer Architecture and Organization",
+          "credits": 3
+        },
+        {
+          "subject": "COMP",
+          "number": 340,
+          "title": "Operating Systems",
+          "credits": 3
+        },
+        {
+          "subject": "COMP",
+          "number": 350,
+          "title": "Software Engineering",
+          "credits": 3,
+          "attributes": [
+            "WI",
+            "SI"
+          ]
+        }
+      ],
+      "selectionGroups": [
+        {
+          "title": "Electronics Requirement",
+          "choose": 1,
+          "from": [
+            {
+              "subject": "PHYS",
+              "number": 210,
+              "title": "Electronics",
+              "credits": 4
+            },
+            {
+              "bundle": [
+                {
+                  "subject": "ELEE",
+                  "number": 201,
+                  "title": "Linear Circuits I"
+                },
+                {
+                  "subject": "ELEE",
+                  "number": 251,
+                  "title": "Lab Skills and Prototyping"
+                }
+              ],
+              "credits": 4,
+              "title": "ELEE 201 and ELEE 251"
+            }
+          ]
+        },
+        {
+          "title": "Advanced Software / Math Choices",
+          "choose": 2,
+          "credits": {
+            "min": 6,
+            "max": 8
+          },
+          "from": [
+            {
+              "subject": "ELEE",
+              "number": 204,
+              "title": "ELEE 204"
+            },
+            {
+              "subject": "COMP",
+              "number": 480,
+              "title": "COMP 480"
+            },
+            {
+              "subject": "PHYS",
+              "numbers": [
+                270,
+                370,
+                470
+              ],
+              "title": "PHYS 270, PHYS 370, or PHYS 470",
+              "notes": [
+                "Limit 3 hours"
+              ]
+            },
+            {
+              "subject": "COMP",
+              "number": 314,
+              "title": "COMP 314"
+            },
+            {
+              "subject": "COMP",
+              "level": 400,
+              "title": "Any 400-level COMP course"
+            },
+            {
+              "subject": "MATH",
+              "number": 213,
+              "title": "MATH 213"
+            },
+            {
+              "subject": "MATH",
+              "number": 222,
+              "title": "MATH 222"
+            }
+          ],
+          "notes": [
+            "If you complete MATH 213 and MATH 222, you will receive a minor in Mathematics."
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Technical Core Requirements",
+      "hours": {
+        "min": 20,
+        "max": 20
+      },
+      "courses": [
+        {
+          "subject": "CHEM",
+          "number": 105,
+          "title": "Chemistry for Engineers",
+          "credits": 4
+        },
+        {
+          "subject": "MATH",
+          "number": 161,
+          "title": "Calculus I",
+          "credits": 4
+        },
+        {
+          "subject": "MATH",
+          "number": 162,
+          "title": "Calculus II",
+          "credits": 4
+        },
+        {
+          "subject": "MATH",
+          "number": 261,
+          "title": "Calculus III",
+          "credits": 4
+        },
+        {
+          "subject": "MATH",
+          "number": 262,
+          "title": "Differential Equations",
+          "credits": 3
+        },
+        {
+          "subject": "MATH",
+          "number": 263,
+          "title": "Numerical Differential Equations",
+          "credits": 1
+        }
+      ]
+    }
+  ],
+  "sampleFourYearPlan": [
+    {
+      "year": "Freshman",
+      "terms": [
+        {
+          "term": "Fall",
+          "credits": 16,
+          "courses": [
+            "PHYS 101",
+            "PHYS 135",
+            "COMP 141",
+            "MATH 161",
+            "Writing Requirement or HUMA Course",
+            "HUMA 100"
+          ]
+        },
+        {
+          "term": "Spring",
+          "credits": 15,
+          "courses": [
+            "PHYS 102",
+            "COMP 220",
+            "MATH 162",
+            "Writing Requirement or HUMA Course",
+            "Electives"
+          ]
+        }
+      ]
+    },
+    {
+      "year": "Sophomore",
+      "terms": [
+        {
+          "term": "Fall",
+          "credits": 17,
+          "courses": [
+            "CHEM 105",
+            "MATH 213 (recommended computer requirement selection)",
+            "MATH 261",
+            "HUMA Course",
+            "SSFT Course"
+          ]
+        },
+        {
+          "term": "Spring",
+          "credits": 17,
+          "courses": [
+            "PHYS 234",
+            "PHYS 242",
+            "PHYS 288",
+            "ASTR 207",
+            "HUMA Course",
+            "Electives"
+          ]
+        }
+      ]
+    },
+    {
+      "year": "Junior",
+      "terms": [
+        {
+          "term": "Fall",
+          "credits": 16,
+          "courses": [
+            "PHYS 210 or ELEE 201 and ELEE 251",
+            "PHYS 303",
+            "COMP 222",
+            "Technical Elective",
+            "HUMA Course"
+          ]
+        },
+        {
+          "term": "Spring",
+          "credits": 17,
+          "courses": [
+            "PHYS 321",
+            "PHYS 442",
+            "COMP 342",
+            "COMP 424",
+            "HUMA Course",
+            "Electives"
+          ],
+          "notes": [
+            "The sequencing of MATH 262 and MATH 263 with PHYS 442 may alternate because PHYS 442 is taught every other year."
+          ]
+        }
+      ]
+    },
+    {
+      "year": "Senior",
+      "terms": [
+        {
+          "term": "Fall",
+          "credits": 15,
+          "courses": [
+            "COMP 244",
+            "COMP 325",
+            "Foundations of Social Science Course",
+            "Electives"
+          ]
+        },
+        {
+          "term": "Spring",
+          "credits": 15,
+          "courses": [
+            "COMP 340",
+            "COMP 350",
+            "MATH 262",
+            "MATH 263",
+            "Electives"
+          ]
+        }
+      ]
+    }
+  ]
+}
