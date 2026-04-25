@@ -76,7 +76,7 @@ export class Home implements OnInit {
     const newSchedule = { name: this.scheduleName };
 
     this.http
-      .post<any>('https://lfrgiy6ixwc3psnimphcam4npa0rxxbq.lambda-url.us-east-2.on.aws/api/v1/schedule/create', newSchedule)
+      .post<any>('http://lfrgiy6ixwc3psnimphcam4npa0rxxbq.lambda-url.us-east-2.on.aws/api/v1/schedule/create', newSchedule)
       .subscribe({
         next: (response) => {
           this.loading = false;
@@ -88,7 +88,7 @@ export class Home implements OnInit {
             next: (user: UserInfo) => {
               if (isPlatformBrowser(this.platformId)) {
                 const existingUser = JSON.parse(localStorage.getItem('current_user') || '{}');
-                
+
                 const updatedUserData = {
                   id: user.id,
                   username: existingUser.username || '',
@@ -98,7 +98,7 @@ export class Home implements OnInit {
                 };
 
                 localStorage.setItem('current_user', JSON.stringify(updatedUserData));
-                
+
                 // Update UI state
                 this.schedules.set(user.schedules || []);
               }

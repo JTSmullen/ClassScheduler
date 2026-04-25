@@ -11,6 +11,19 @@
         <p>Get started with ClassScheduler and organize your classes.</p>
       </div>
 
+      <div class="field-group admin-check">
+        <label class="checkbox-label">
+          <input
+            type="checkbox"
+            [checked]="isAdmin"
+            (change)="isAdmin = $any($event.target).checked"
+          />
+          <span>Register as Admin</span>
+        </label>
+      </div>
+
+      <div class="error-message" *ngIf="errorMessage">{{ errorMessage }}</div>
+
       <form (submit)="handleRegister($event)" class="register-form">
         <div class="name-row">
           <div class="field-group">

@@ -39,7 +39,7 @@ export interface ScheduleDTO {
   providedIn: 'root',
 })
 export class ScheduleService {
-  private readonly SCHEDULE_URL = 'https://lfrgiy6ixwc3psnimphcam4npa0rxxbq.lambda-url.us-east-2.on.aws/api/v1/schedule';
+  private readonly SCHEDULE_URL = 'http://lfrgiy6ixwc3psnimphcam4npa0rxxbq.lambda-url.us-east-2.on.aws/api/v1/schedule';
 
   constructor(private http: HttpClient) {}
 

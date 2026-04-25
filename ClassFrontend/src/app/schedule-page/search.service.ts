@@ -15,6 +15,7 @@ export interface SearchItemDTO {
 
 export interface SearchResponseDTO {
   results: SearchItemDTO[];
+  filterOptionsDTO: FilterOptionsDTO;
   currentPage: number;
   totalPages: number;
   totalElements: number;
@@ -63,7 +64,7 @@ export interface CourseSectionDTO {
   providedIn: 'root',
 })
 export class SearchService {
-  private readonly SEARCH_URL = 'https://lfrgiy6ixwc3psnimphcam4npa0rxxbq.lambda-url.us-east-2.on.aws/api/v1/search';
+  private readonly SEARCH_URL = 'http://lfrgiy6ixwc3psnimphcam4npa0rxxbq.lambda-url.us-east-2.on.aws/api/v1/search';
 
   constructor(private http: HttpClient) {}
 
