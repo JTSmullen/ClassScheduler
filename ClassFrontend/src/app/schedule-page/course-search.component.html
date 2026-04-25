@@ -18,22 +18,22 @@
       />
 
       <!-- Pagination Controls Inside Bar -->
-      <div class="pagination-controls" *ngIf="totalPages() > 0">
-        <button 
-          (click)="prevPage()" 
-          [disabled]="currentPage() === 0" 
+      <div class="pagination-controls" *ngIf="totalPages() > 1">
+        <button
+          (click)="prevPage()"
+          [disabled]="currentPage() === 0"
           class="page-btn"
         >
           <lucide-icon [img]="ChevronUp"></lucide-icon>
         </button>
-        
+
         <span class="page-indicator">
           {{ currentPage() + 1 }} / {{ totalPages() }}
         </span>
 
-        <button 
-          (click)="nextPage()" 
-          [disabled]="currentPage() >= totalPages() - 1" 
+        <button
+          (click)="nextPage()"
+          [disabled]="currentPage() >= totalPages() - 1"
           class="page-btn"
         >
           <lucide-icon [img]="ChevronDown"></lucide-icon>
@@ -55,11 +55,12 @@
           </button>
         </div>
 
-        <ng-container *ngTemplateOutlet="filterGrp; context: { id: 'semesters', label: 'Semester', options: filterOptions()?.semester }"></ng-container>
-        <ng-container *ngTemplateOutlet="filterGrp; context: { id: 'subjects', label: 'Subject', options: filterOptions()?.subjects }"></ng-container>
-        <ng-container *ngTemplateOutlet="filterGrp; context: { id: 'numbers', label: 'Course Number', options: filterOptions()?.numbers }"></ng-container>
-        <ng-container *ngTemplateOutlet="filterGrp; context: { id: 'credits', label: 'Credits', options: filterOptions()?.credits, suffix: ' CR' }"></ng-container>
-        <ng-container *ngTemplateOutlet="filterGrp; context: { id: 'faculty', label: 'Faculty', options: filterOptions()?.faculty }"></ng-container>
+        <!-- filterOptions()?.semester — matches FilterOptionsDTO field names -->
+        <ng-container *ngTemplateOutlet="filterGrp; context: { id: 'semesters', label: 'Semester',      options: filterOptions()?.semester }"></ng-container>
+        <ng-container *ngTemplateOutlet="filterGrp; context: { id: 'subjects',  label: 'Subject',       options: filterOptions()?.subjects }"></ng-container>
+        <ng-container *ngTemplateOutlet="filterGrp; context: { id: 'numbers',   label: 'Course Number', options: filterOptions()?.numbers }"></ng-container>
+        <ng-container *ngTemplateOutlet="filterGrp; context: { id: 'credits',   label: 'Credits',       options: filterOptions()?.credits, suffix: ' CR' }"></ng-container>
+        <ng-container *ngTemplateOutlet="filterGrp; context: { id: 'faculty',   label: 'Faculty',       options: filterOptions()?.faculty }"></ng-container>
       </div>
 
       <!-- Results Display -->
@@ -103,10 +104,10 @@
     </button>
     <div *ngIf="expandedFilters().has(id)" class="filter-options">
       <label *ngFor="let opt of options || []" class="filter-option">
-        <input 
-          type="checkbox" 
-          [checked]="isFilterSelected(id, opt)" 
-          (change)="toggleFilterOption(id, opt)" 
+        <input
+          type="checkbox"
+          [checked]="isFilterSelected(id, opt)"
+          (change)="toggleFilterOption(id, opt)"
         />
         <span>{{ opt }}{{ suffix || '' }}</span>
       </label>

@@ -58,10 +58,12 @@ export class CourseSearchComponent implements OnInit {
   constructor(private searchService: SearchService) {}
 
   ngOnInit() {
+    // Load global filter options first so filters are available before any search
     this.loadFilterOptions();
-    this.performSearch(0);
+    // no initial search
   }
 
+  // Hits GET /filter/options for the initial global filter options
   loadFilterOptions() {
     this.searchService.getFilterOptions().subscribe({
       next: (options) => this.filterOptions.set(options),
@@ -72,7 +74,7 @@ export class CourseSearchComponent implements OnInit {
   performSearch(page: number = 0) {
     this.isLoading.set(true);
     this.currentPage.set(page);
-    
+
     const f = this.filters();
     const filterRequest = {
       keyword: this.searchQuery().trim() || undefined,
@@ -85,12 +87,18 @@ export class CourseSearchComponent implements OnInit {
 
     this.searchService.searchAndFilter(filterRequest as any, page).subscribe({
       next: (response: any) => {
-        // Support both direct array response or paginated object { results: [], totalPages: x }
-        const data = Array.isArray(response) ? response : (response.results || []);
-        this.totalPages.set(response.totalPages || 1);
-        
-        // Instant update
-        this.searchResults.set(data);
+        // Map to SearchResponseDTO shape: { results, filterOptionsDTO, currentPage, totalPages, totalElements }
+        const results: SearchItemDTO[] = response.results ? Array.from(response.results) : [];
+        this.searchResults.set(results);
+        this.totalPages.set(response.totalPages ?? 1);
+        this.currentPage.set(response.currentPage ?? page);
+
+        // Update filter options from search response so they reflect current result set
+        const hasActiveSearch = this.searchQuery().trim().length > 0 || this.activeFilterCount() > 0;
+        if (response.filterOptionsDTO && hasActiveSearch) {
+          this.filterOptions.set(response.filterOptionsDTO);
+        }
+
         this.isLoading.set(false);
       },
       error: (error) => {
@@ -105,18 +113,18 @@ export class CourseSearchComponent implements OnInit {
     this.filters.update((current) => {
       const newFilters = { ...current };
       const newSet = new Set(current[filterType] as any);
-      
+
       if (newSet.has(value)) {
         newSet.delete(value);
       } else {
         newSet.add(value);
       }
-      
+
       (newFilters[filterType] as any) = newSet;
       return newFilters;
     });
 
-    this.performSearch(0); // Reset to page 0 on change
+    this.performSearch(0);
   }
 
   nextPage() {
@@ -132,7 +140,7 @@ export class CourseSearchComponent implements OnInit {
   }
 
   toggleFilter(filterName: string) {
-    this.expandedFilters.update(s => {
+    this.expandedFilters.update((s) => {
       const next = new Set(s);
       if (next.has(filterName)) next.delete(filterName);
       else next.add(filterName);
@@ -152,7 +160,11 @@ export class CourseSearchComponent implements OnInit {
       credits: new Set(),
       faculty: new Set(),
     });
-    this.performSearch(0);
+    this.searchQuery.set('');
+    this.searchResults.set([]);
+    this.totalPages.set(0);
+    // Reload global filter options since we're back to a blank state
+    this.loadFilterOptions();
   }
 
   onSearchInput() {
