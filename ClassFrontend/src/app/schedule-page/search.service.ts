@@ -70,8 +70,8 @@ export class SearchService {
   // Helper method to retrieve token from localStorage and build the headers
   private getHttpOptions() {
     // Change 'token' if your app saves it under a different key (e.g., 'jwt' or 'access_token')
-    const token = localStorage.getItem('token'); 
-    
+    const token = localStorage.getItem('token');
+
     let headers = new HttpHeaders({
       'Content-Type': 'application/json'
     });

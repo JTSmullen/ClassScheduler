@@ -26,7 +26,7 @@ public interface CourseSectionRepository extends JpaRepository<CourseSection, Lo
     @Query("SELECT DISTINCT c.credits FROM CourseSection c")
     Set<Integer> findDistinctCredits();
 
-    @Query("SELECT DISTINCT f FROM CourseSection c JOIN c.faculty f")
+    @Query(value = "SELECT DISTINCT faculty FROM course_faculty WHERE faculty IS NOT NULL AND TRIM(faculty) != ''", nativeQuery = true)
     Set<String> findDistinctFaculty();
 
     List<CourseSection> findBySubjectIgnoreCaseAndNumber(String subject, int number);
