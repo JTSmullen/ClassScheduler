@@ -19,6 +19,7 @@ export class RegisterPage {
   email = '';
   password = '';
   confirmPassword = '';
+  isAdmin = false;        // ← add here
   loading = false;
   errorMessage = '';
   readonly Calendar = Calendar;
@@ -29,13 +30,13 @@ export class RegisterPage {
     event.preventDefault();
     this.errorMessage = '';
 
-    // Client-side validation
     if (this.password !== this.confirmPassword) {
       this.errorMessage = 'Passwords do not match';
       return;
     }
 
     this.loading = true;
+    // remove isAdmin = false that was here
 
     const registerData = {
       username: this.username,
@@ -43,6 +44,7 @@ export class RegisterPage {
       firstName: this.firstName,
       lastName: this.lastName,
       email: this.email,
+      admin: this.isAdmin
     };
 
     this.authService.register(registerData).subscribe({

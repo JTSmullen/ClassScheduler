@@ -15,6 +15,7 @@ export interface SearchItemDTO {
 
 export interface SearchResponseDTO {
   results: SearchItemDTO[];
+  filterOptionsDTO: FilterOptionsDTO;
   currentPage: number;
   totalPages: number;
   totalElements: number;
