@@ -55,7 +55,7 @@ export interface RecommendationResponse {
   providedIn: 'root',
 })
 export class RecommendationService {
-  private readonly RECOMMENDATION_URL = 'http://localhost:8080/api/v1/recommendations';
+  private readonly RECOMMENDATION_URL = 'https://lfrgiy6ixwc3psnimphcam4npa0rxxbq.lambda-url.us-east-2.on.aws/api/v1/recommendations';
 
   constructor(private http: HttpClient) {}
 
