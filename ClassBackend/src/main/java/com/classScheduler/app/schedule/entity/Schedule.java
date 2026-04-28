@@ -24,7 +24,7 @@ public class Schedule {
     @Column(name = "name", length = 99, nullable = false)
     private String name;
 
-    @Column(name = "semester", length = 20, nullable = false)
+    @Column(name = "semester", length = 20, nullable = true)
     private String semester;
 
     @ManyToMany
