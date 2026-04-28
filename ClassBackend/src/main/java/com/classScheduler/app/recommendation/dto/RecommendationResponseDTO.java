@@ -15,8 +15,6 @@ public class RecommendationResponseDTO {
     private List<RecommendedCourseDTO> recommendations;
     private List<String> unavailableCourseCodes;
     private boolean canGraduateOnTime;
-    private List<String> unscheduledThisSemester;
-    private List<String> remainingRequirementsAfterSemester;
     private List<String> planningNotes;
     private List<String> blockingIssues;
 }

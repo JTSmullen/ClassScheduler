@@ -23,11 +23,11 @@ export interface SearchResponseDTO {
 
 export interface SearchFilterDTO {
   keyword?: string;
-  semesters?: Set<string>;
-  subjects?: Set<string>;
-  numbers?: Set<number>;
-  credits?: Set<number>;
-  faculty?: Set<string>;
+  semesters?: Set<string> | string[];
+  subjects?: Set<string> | string[];
+  numbers?: Set<number> | number[];
+  credits?: Set<number> | number[];
+  faculty?: Set<string> | string[];
   times?: any[];
 }
 

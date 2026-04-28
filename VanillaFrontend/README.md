@@ -14,7 +14,7 @@ modify; you can migrate back to React later if desired.
    ```
 
 2. **Run the backend** (see `ClassBackend` project instructions). The frontend assumes the
-authorization and schedule APIs are available at `http://localhost:8080/api/v1`.
+authorization and schedule APIs are available at `https://lfrgiy6ixwc3psnimphcam4npa0rxxbq.lambda-url.us-east-2.on.aws/api/v1`.
 
 3. **Start development server**
    ```bash
