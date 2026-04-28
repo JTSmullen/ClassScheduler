@@ -8,6 +8,7 @@ import com.classScheduler.app.course.repository.CourseSectionRepository;
 import com.classScheduler.app.exception.customs.CourseSectionNotFoundException;
 import com.classScheduler.app.exception.customs.ScheduleNotFoundException;
 import com.classScheduler.app.exception.customs.ScheduleWithNameAndUserExists;
+import com.classScheduler.app.exception.customs.TimeConflictException;
 import com.classScheduler.app.schedule.dto.NewScheduleRequest;
 import com.classScheduler.app.schedule.dto.ScheduleDTO;
 import com.classScheduler.app.schedule.entity.Schedule;
@@ -68,6 +69,10 @@ public class ScheduleService {
 
         // Check for conflicts
         checkConflict(scheduleId);
+
+        if(schedule.isHasConflict()){
+            throw new TimeConflictException("Time Conflict Between Classes! Course Not Added");
+        }
 
         // Save the changes
         scheduleRepo.save(schedule);
