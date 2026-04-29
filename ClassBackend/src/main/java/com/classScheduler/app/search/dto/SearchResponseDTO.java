@@ -12,13 +12,15 @@ import java.util.Set;
 @Setter
 public class SearchResponseDTO {
     private Set<SearchItemDTO> results;
+    private FilterOptionsDTO filterOptionsDTO;
 
     private int currentPage;
     private int totalPages;
     private long totalElements;
 
-    public SearchResponseDTO(Set<SearchItemDTO> results, int currentPage, int totalPages, long totalElements) {
+    public SearchResponseDTO(Set<SearchItemDTO> results, FilterOptionsDTO filterOptionsDTO, int currentPage, int totalPages, long totalElements) {
         this.results = results;
+        this.filterOptionsDTO = filterOptionsDTO;
         this.currentPage = currentPage;
         this.totalPages = totalPages;
         this.totalElements = totalElements;

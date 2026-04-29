@@ -18,22 +18,22 @@
       />
 
       <!-- Pagination Controls Inside Bar -->
-      <div class="pagination-controls" *ngIf="totalPages() > 0">
-        <button 
-          (click)="prevPage()" 
-          [disabled]="currentPage() === 0" 
+      <div class="pagination-controls" *ngIf="totalPages() > 1">
+        <button
+          (click)="prevPage()"
+          [disabled]="currentPage() === 0"
           class="page-btn"
         >
           <lucide-icon [img]="ChevronUp"></lucide-icon>
         </button>
-        
+
         <span class="page-indicator">
           {{ currentPage() + 1 }} / {{ totalPages() }}
         </span>
 
-        <button 
-          (click)="nextPage()" 
-          [disabled]="currentPage() >= totalPages() - 1" 
+        <button
+          (click)="nextPage()"
+          [disabled]="currentPage() >= totalPages() - 1"
           class="page-btn"
         >
           <lucide-icon [img]="ChevronDown"></lucide-icon>
@@ -55,11 +55,72 @@
           </button>
         </div>
 
-        <ng-container *ngTemplateOutlet="filterGrp; context: { id: 'semesters', label: 'Semester', options: filterOptions()?.semester }"></ng-container>
-        <ng-container *ngTemplateOutlet="filterGrp; context: { id: 'subjects', label: 'Subject', options: filterOptions()?.subjects }"></ng-container>
-        <ng-container *ngTemplateOutlet="filterGrp; context: { id: 'numbers', label: 'Course Number', options: filterOptions()?.numbers }"></ng-container>
-        <ng-container *ngTemplateOutlet="filterGrp; context: { id: 'credits', label: 'Credits', options: filterOptions()?.credits, suffix: ' CR' }"></ng-container>
-        <ng-container *ngTemplateOutlet="filterGrp; context: { id: 'faculty', label: 'Faculty', options: filterOptions()?.faculty }"></ng-container>
+        <!-- filterOptions()?.semester — matches FilterOptionsDTO field names -->
+        <ng-container *ngTemplateOutlet="filterGrp; context: { id: 'semesters', label: 'Semester',      options: filterOptions()?.semester }"></ng-container>
+        <ng-container *ngTemplateOutlet="filterGrp; context: { id: 'subjects',  label: 'Subject',       options: filterOptions()?.subjects }"></ng-container>
+        <ng-container *ngTemplateOutlet="filterGrp; context: { id: 'numbers',   label: 'Course Number', options: filterOptions()?.numbers }"></ng-container>
+        <ng-container *ngTemplateOutlet="filterGrp; context: { id: 'credits',   label: 'Credits',       options: filterOptions()?.credits, suffix: ' CR' }"></ng-container>
+        <ng-container *ngTemplateOutlet="filterGrp; context: { id: 'faculty',   label: 'Faculty',       options: filterOptions()?.faculty }"></ng-container>
+
+        <!-- Time Filter -->
+        <div class="filter-group">
+          <button class="filter-title" (click)="toggleFilter('times')">
+            <span>Class Time</span>
+            <lucide-icon [img]="expandedFilters().has('times') ? ChevronUp : ChevronDown"></lucide-icon>
+          </button>
+          <div *ngIf="expandedFilters().has('times')" class="filter-options time-filter-container">
+            <!-- Time Input Controls -->
+            <div class="time-input-section">
+              <div class="time-control">
+                <label>Day:</label>
+                <select [value]="timeFilterUI().day" (change)="onDayChange($any($event.target).value)">
+                  <option *ngFor="let day of DAYS" [value]="day">{{ getDayLabel(day) }}</option>
+                </select>
+              </div>
+
+              <div class="time-control">
+                <label>Start Time:</label>
+                <div class="time-select-group">
+                  <select [value]="timeFilterUI().startHour" (change)="onStartHourChange($any($event.target).value)">
+                    <option *ngFor="let h of HOURS" [value]="h">{{ formatHourOption(h) }}</option>
+                  </select>
+                  <span class="time-colon">:</span>
+                  <select [value]="timeFilterUI().startMinute" (change)="onStartMinuteChange($any($event.target).value)">
+                    <option *ngFor="let m of MINUTES" [value]="m">{{ formatMinuteOption(m) }}</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="time-control">
+                <label>End Time:</label>
+                <div class="time-select-group">
+                  <select [value]="timeFilterUI().endHour" (change)="onEndHourChange($any($event.target).value)">
+                    <option *ngFor="let h of HOURS" [value]="h">{{ formatHourOption(h) }}</option>
+                  </select>
+                  <span class="time-colon">:</span>
+                  <select [value]="timeFilterUI().endMinute" (change)="onEndMinuteChange($any($event.target).value)">
+                    <option *ngFor="let m of MINUTES" [value]="m">{{ formatMinuteOption(m) }}</option>
+                  </select>
+                </div>
+              </div>
+
+              <button class="add-time-btn" (click)="addTimeFilter()">Add</button>
+            </div>
+
+            <!-- Selected Time Filters -->
+            <div class="selected-times" *ngIf="filters().times.length > 0">
+              <div *ngFor="let timeFilter of filters().times; let i = index" class="time-badge">
+                <span>
+                  {{ getDayLabel(timeFilter.day) }}<br/>
+                  <small>{{ formatTimeDisplay(timeFilter.startHour, timeFilter.startMinute) }} - {{ formatTimeDisplay(timeFilter.endHour, timeFilter.endMinute) }}</small>
+                </span>
+                <button class="remove-time-btn" (click)="removeTimeFilter(i)">
+                  <lucide-icon [img]="X"></lucide-icon>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Results Display -->
@@ -84,7 +145,8 @@
             </div>
             <div class="course-name">{{ course.name }}</div>
             <div class="course-section">Section {{ course.section }}</div>
-            <div class="course-faculty" *ngIf="course.faculty?.length">
+            <!-- Resolved NG8107 null checking below -->
+            <div class="course-faculty" *ngIf="course.faculty && course.faculty.length > 0">
               <span class="label">Faculty:</span> {{ course.faculty.join(', ') }}
             </div>
           </div>
@@ -103,10 +165,10 @@
     </button>
     <div *ngIf="expandedFilters().has(id)" class="filter-options">
       <label *ngFor="let opt of options || []" class="filter-option">
-        <input 
-          type="checkbox" 
-          [checked]="isFilterSelected(id, opt)" 
-          (change)="toggleFilterOption(id, opt)" 
+        <input
+          type="checkbox"
+          [checked]="isFilterSelected(id, opt)"
+          (change)="toggleFilterOption(id, opt)"
         />
         <span>{{ opt }}{{ suffix || '' }}</span>
       </label>

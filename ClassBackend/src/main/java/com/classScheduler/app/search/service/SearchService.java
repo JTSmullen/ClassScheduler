@@ -19,6 +19,7 @@ import com.classScheduler.app.user.repository.UserRepository;
 import com.classScheduler.app.search.repository.SearchRepository;
 import com.classScheduler.app.search.dto.SearchResponseDTO;
 
+import jakarta.annotation.PostConstruct;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +31,9 @@ import org.springframework.data.domain.PageRequest;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+
+import jakarta.annotation.PostConstruct;
 
 @Service
 public class SearchService {
@@ -44,6 +48,33 @@ public class SearchService {
         this.userRepository = userRepository;
         this.searchRepository = searchRepository;
     }
+
+
+
+// database faculty check. Faculty not there. Other fields appear to be fine.
+//    @PostConstruct
+//    public void debugDatabaseData() {
+//        System.out.println("\n=== DATABASE DIAGNOSTIC CHECK ===");
+//        List<CourseSection> allCourses = courseSectionRepository.findAll();
+//
+//        long coursesWithFaculty = allCourses.stream()
+//                .filter(c -> c.getFaculty() != null && !c.getFaculty().isEmpty())
+//                .count();
+//        long coursesWithTimes = allCourses.stream()
+//                .filter(c -> c.getTimes() != null && !c.getTimes().isEmpty())
+//                .count();
+//
+//        long coursesWithSemester = allCourses.stream()
+//                .filter(c -> c.getSemester() != null && !c.getSemester().isEmpty())
+//                .count();
+//
+//        System.out.println("Courses that actually have times saved: " + coursesWithTimes);
+//        System.out.println("Courses that actually have semester saved: " + coursesWithSemester);
+//
+//        System.out.println("Total courses in DB: " + allCourses.size());
+//        System.out.println("Courses that actually have faculty saved: " + coursesWithFaculty);
+//        System.out.println("=================================\n");
+//    }
 
     @Transactional(readOnly = true)
     public SearchResponseDTO searchAndFilter(SearchFilterDTO filter, Pageable pageable) {
@@ -67,11 +98,23 @@ public class SearchService {
         // build results DTO
         Set<SearchItemDTO> resultsDTO = buildSearchResultsDTO(results);
 
+        FilterOptionsDTO filterOptionsDTO = buildFilterOptionsDTO(results);
+
         // return search results and
-        return new SearchResponseDTO(resultsDTO, resultsPage.getNumber(), resultsPage.getTotalPages(), resultsPage.getTotalElements());
+        return new SearchResponseDTO(resultsDTO, filterOptionsDTO, resultsPage.getNumber(), resultsPage.getTotalPages(), resultsPage.getTotalElements());
     }
 
-    // helper method to build SearchI
+    public FilterOptionsDTO globalFilterOptionsDTO() {
+        Set<String> semesters = new TreeSet<>(courseSectionRepository.findDistinctSemesters());
+        Set<String> subjects = new TreeSet<>(courseSectionRepository.findDistinctSubjects());
+        Set<Integer> numbers = new TreeSet<>(courseSectionRepository.findDistinctNumbers());
+        Set<Integer> credits = new TreeSet<>(courseSectionRepository.findDistinctCredits());
+        Set<String> faculty = new TreeSet<>(courseSectionRepository.findDistinctFaculty());
+
+        return new FilterOptionsDTO(semesters, subjects, numbers, credits, faculty);
+    }
+
+    // helper method to build Search
     private Set<SearchItemDTO> buildSearchResultsDTO(Set<CourseSection> results) {
         List<SearchItemDTO> resultsDTOList = results.stream()
                 .map(result -> new SearchItemDTO(
@@ -91,13 +134,33 @@ public class SearchService {
         return resultsDTO;
     }
 
-    @Transactional(readOnly = true)
-    public FilterOptionsDTO buildFilterOptionsDTO() {
-        Set<String> semesters = courseSectionRepository.findDistinctSemesters();
-        Set<String> subjects = courseSectionRepository.findDistinctSubjects();
-        Set<Integer> numbers = courseSectionRepository.findDistinctNumbers();
-        Set<Integer> credits = courseSectionRepository.findDistinctCredits();
-        Set<String> faculty = courseSectionRepository.findDistinctFaculty();
+    // use TreeSet to sort filter options
+    private FilterOptionsDTO buildFilterOptionsDTO(Set<CourseSection> sections) {
+        Set<String> semesters = sections.stream()
+                .map(CourseSection::getSemester)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toCollection(TreeSet::new));
+
+        Set<String> subjects = sections.stream()
+                .map(CourseSection::getSubject)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toCollection(TreeSet::new));
+
+        Set<Integer> numbers = sections.stream()
+                .map(CourseSection::getNumber)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toCollection(TreeSet::new));
+
+        Set<Integer> credits = sections.stream()
+                .map(CourseSection::getCredits)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toCollection(TreeSet::new));
+
+        Set<String> faculty = sections.stream()
+                .filter(c -> c.getFaculty() != null)
+                .flatMap(c -> c.getFaculty().stream())
+                .filter(Objects::nonNull)
+                .collect(Collectors.toCollection(TreeSet::new));
 
         return new FilterOptionsDTO(semesters, subjects, numbers, credits, faculty);
     }
