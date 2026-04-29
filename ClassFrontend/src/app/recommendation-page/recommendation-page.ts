@@ -9,8 +9,6 @@ import {
   RecommendationResponse,
 } from './recommendation.service';
 
-// This component handles the recommendation request flow:
-// 1) load dropdown options, 2) collect user inputs, 3) call backend, 4) render results.
 @Component({
   selector: 'app-recommendation-page',
   standalone: true,
@@ -19,8 +17,12 @@ import {
   styleUrl: './recommendation-page.sass',
 })
 export class RecommendationPage implements OnInit {
-  // Raw text from the textarea. It is transformed into a string[] by parsedCourseCodes.
-  completedCoursesText = '';
+  // Backing field for the textarea input
+  private _completedCoursesText = '';
+  
+  // Stored array to prevent infinite change detection loops
+  parsedCourseCodes: string[] = [];
+
   // Selected values for the two dropdowns.
   selectedProgramCode = '';
   selectedSemester = '';
@@ -44,20 +46,29 @@ export class RecommendationPage implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // Gate this page behind login presence.
-    const token = this.getAuthToken();
-    if (!token) {
-      this.router.navigate(['/login']);
-      return;
-    }
+    // SSR SAFETY GUARD: Prevent the Node.js server from running this block.
+    // If the server runs this, it sees no token, redirects to /login, and sends the wrong HTML,
+    // which causes Angular to throw a Hydration Mismatch and permanently freeze the UI.
+    if (typeof window !== 'undefined') {
+      const token = this.getAuthToken();
+      if (!token) {
+        this.router.navigate(['/login']);
+        return;
+      }
 
-    // Initial page data load for semester and program sheet dropdowns.
-    this.loadOptions(token);
+      // Initial page data load for semester and program sheet dropdowns.
+      this.loadOptions(token);
+    }
   }
 
-  get parsedCourseCodes(): string[] {
-    // Convert comma-separated user input into a normalized array.
-    return this.completedCoursesText
+  // Intercepts the ngModel updates from the HTML so we only calculate the array 
+  // exactly when the user types, instead of infinitely on every UI tick.
+  get completedCoursesText(): string {
+    return this._completedCoursesText;
+  }
+  set completedCoursesText(value: string) {
+    this._completedCoursesText = value;
+    this.parsedCourseCodes = value
       .split(',')
       .map((course) => course.trim().toUpperCase())
       .filter((course) => course.length > 0);
