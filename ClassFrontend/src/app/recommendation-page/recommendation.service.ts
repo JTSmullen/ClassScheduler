@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, timeout } from 'rxjs';
+import { Observable } from 'rxjs';
 
 // Dropdown option shape for program sheet selection.
 export interface ProgramSheetOption {
@@ -47,8 +47,6 @@ export interface RecommendationResponse {
   recommendations: RecommendedCourse[];
   unavailableCourseCodes: string[];
   canGraduateOnTime: boolean;
-  unscheduledThisSemester: string[];
-  remainingRequirementsAfterSemester: string[];
   planningNotes: string[];
   blockingIssues: string[];
 }
@@ -57,27 +55,22 @@ export interface RecommendationResponse {
   providedIn: 'root',
 })
 export class RecommendationService {
-  private readonly RECOMMENDATION_URL = 'http://localhost:8080/api/v1/recommendations';
-  private readonly REQUEST_TIMEOUT_MS = 10000;
+  private readonly RECOMMENDATION_URL = 'https://lfrgiy6ixwc3psnimphcam4npa0rxxbq.lambda-url.us-east-2.on.aws/api/v1/recommendations';
 
   constructor(private http: HttpClient) {}
 
   // Gets dropdown data required to render the form.
   getOptions(token: string): Observable<RecommendationOptionsResponse> {
-    return this.http
-      .get<RecommendationOptionsResponse>(`${this.RECOMMENDATION_URL}/options`, {
-        headers: this.buildAuthHeaders(token),
-      })
-      .pipe(timeout(this.REQUEST_TIMEOUT_MS));
+    return this.http.get<RecommendationOptionsResponse>(`${this.RECOMMENDATION_URL}/options`, {
+      headers: this.buildAuthHeaders(token),
+    });
   }
 
   // Sends user inputs and returns recommendation results.
   generateSchedule(request: RecommendationRequest, token: string): Observable<RecommendationResponse> {
-    return this.http
-      .post<RecommendationResponse>(this.RECOMMENDATION_URL, request, {
-        headers: this.buildAuthHeaders(token),
-      })
-      .pipe(timeout(this.REQUEST_TIMEOUT_MS));
+    return this.http.post<RecommendationResponse>(this.RECOMMENDATION_URL, request, {
+      headers: this.buildAuthHeaders(token),
+    });
   }
 
   // Centralized auth header builder for all recommendation requests.

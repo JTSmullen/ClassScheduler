@@ -1,10 +1,7 @@
 package com.classScheduler.app.exception;
 
-import com.classScheduler.app.exception.customs.CourseSectionNotFoundException;
-import com.classScheduler.app.exception.customs.ScheduleNotFoundException;
+import com.classScheduler.app.exception.customs.*;
 
-import com.classScheduler.app.exception.customs.ScheduleWithNameAndUserExists;
-import com.classScheduler.app.exception.customs.UserAlreadyExistsException;
 import com.classScheduler.app.exception.dto.ErrorResponseDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -40,6 +37,12 @@ public class GlobalExceptionHandler {
                 errors.put(error.getField(), error.getDefaultMessage()));
 
         return errors;
+    }
+
+    @ExceptionHandler(TimeConflictException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorResponseDto handleCourseTimeConflict(TimeConflictException e) {
+        return new ErrorResponseDto(e.getMessage(), HttpStatus.CONFLICT.value());
     }
 
     @ExceptionHandler(CourseSectionNotFoundException.class)

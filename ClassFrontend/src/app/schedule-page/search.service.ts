@@ -15,6 +15,7 @@ export interface SearchItemDTO {
 
 export interface SearchResponseDTO {
   results: SearchItemDTO[];
+  filterOptionsDTO: FilterOptionsDTO;
   currentPage: number;
   totalPages: number;
   totalElements: number;
@@ -22,11 +23,11 @@ export interface SearchResponseDTO {
 
 export interface SearchFilterDTO {
   keyword?: string;
-  semesters?: Set<string>;
-  subjects?: Set<string>;
-  numbers?: Set<number>;
-  credits?: Set<number>;
-  faculty?: Set<string>;
+  semesters?: Set<string> | string[];
+  subjects?: Set<string> | string[];
+  numbers?: Set<number> | number[];
+  credits?: Set<number> | number[];
+  faculty?: Set<string> | string[];
   times?: any[];
 }
 
@@ -63,15 +64,15 @@ export interface CourseSectionDTO {
   providedIn: 'root',
 })
 export class SearchService {
-  private readonly SEARCH_URL = 'http://localhost:8080/api/v1/search';
+  private readonly SEARCH_URL = 'https://lfrgiy6ixwc3psnimphcam4npa0rxxbq.lambda-url.us-east-2.on.aws/api/v1/search';
 
   constructor(private http: HttpClient) {}
 
   // Helper method to retrieve token from localStorage and build the headers
   private getHttpOptions() {
     // Change 'token' if your app saves it under a different key (e.g., 'jwt' or 'access_token')
-    const token = localStorage.getItem('token'); 
-    
+    const token = localStorage.getItem('token');
+
     let headers = new HttpHeaders({
       'Content-Type': 'application/json'
     });

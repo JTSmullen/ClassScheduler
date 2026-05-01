@@ -4,6 +4,7 @@ import com.classScheduler.app.auth.dto.LoginRequest;
 import com.classScheduler.app.auth.dto.LoginResponse;
 import com.classScheduler.app.auth.dto.RegisterRequest;
 import com.classScheduler.app.exception.customs.UserAlreadyExistsException;
+import com.classScheduler.app.user.entities.Role;
 import com.classScheduler.app.user.entities.User;
 import com.classScheduler.app.user.repository.UserRepository;
 import com.classScheduler.app.security.util.JwtUtil;
@@ -51,6 +52,12 @@ public class AuthService {
         user.setFirstName(registerRequest.getFirstName());
         user.setLastName(registerRequest.getLastName());
         user.setEmail(registerRequest.getEmail());
+        if (registerRequest.isAdmin()) {
+            user.setRole(Role.ADMIN);
+        }
+        else {
+            user.setRole(Role.USER);
+        }
 
         userRepository.save(user);
 

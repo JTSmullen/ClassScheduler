@@ -175,39 +175,16 @@ public class RecommendationService {
                 continue;
             }
 
-                // Defer unresolved-course messaging until after all balancing/fill logic runs so the
-                // final blockers reflect the actual final schedule rather than an intermediate state.
+            blockingIssues.add("Could not place %s into %s because no elective/HUMA replacement or forward shift was feasible."
+                    .formatted(backlog.courseCode(), STANDARD_PLAN_SEMESTERS.get(selectedTermIndex)));
         }
 
         if (!pushedCourses.isEmpty()) {
             planningNotes.add("Shifted forward course(s) to preserve earlier untaken work: " + String.join(", ", pushedCourses));
         }
 
-        applyCreditBalancing(
-            selectedTerm,
-            selectedTermIndex,
-            planTerms,
-            pools,
-            completedCourses,
-            creditsByCourseCode,
-            requestedSeason,
-            planningNotes
-        );
+        applyCreditBalancing(selectedTerm, pools, completedCourses, creditsByCourseCode, requestedSeason, planningNotes);
         replaceMajorWithAlternativesWhenPossible(selectedTerm, pools, completedCourses, requestedSeason, planningNotes);
-
-        Map<String, String> displayLabelsByCourseCode = buildDisplayLabelsByCourseCode(planTerms);
-
-        List<AssignedCourse> unresolvedBacklog = backlogCourses.stream()
-            .filter(course -> !selectedTerm.containsCourse(course.courseCode()))
-            .filter(course -> !unavailableCourseCodes.contains(course.courseCode()))
-            .toList();
-
-        for (AssignedCourse course : unresolvedBacklog) {
-            blockingIssues.add("%s still does not fit into %s after trying course swaps and forward-shift options, so it remains outside the recommended semester."
-                .formatted(describeOutstandingRequirement(course), STANDARD_PLAN_SEMESTERS.get(selectedTermIndex)));
-        }
-
-            List<String> unscheduledThisSemester = summarizeRequirements(unresolvedBacklog);
 
         // Build conflict-aware section picks.
         List<RecommendedCourseDTO> recommendations = buildConflictAwareRecommendations(
@@ -218,41 +195,19 @@ public class RecommendationService {
                 blockingIssues
         );
 
-        List<AssignedCourse> remainingAfterRecommendedTerm = collectRemainingUntakenSamplePlanCourses(
-            planTerms,
-            completedCourses,
-            selectedTerm,
-            unavailableCourseCodes
+        boolean canGraduateOnTime = blockingIssues.isEmpty() && backlogCodes.stream().allMatch(code ->
+                selectedTerm.containsCourse(code) || unavailableCourseCodes.contains(code)
         );
-
-        List<String> remainingRequirementSummaries = summarizeRequirements(remainingAfterRecommendedTerm);
-
-        int remainingSemesters = Math.max(0, STANDARD_PLAN_SEMESTERS.size() - selectedTermIndex - 1);
-        int remainingCredits = remainingAfterRecommendedTerm.stream()
-                .map(AssignedCourse::courseCode)
-                .distinct()
-                .mapToInt(code -> creditForCourse(code, creditsByCourseCode))
-                .sum();
-        boolean canGraduateOnTime = remainingCredits <= remainingSemesters * MAX_TERM_CREDITS;
-
-        if (!remainingRequirementSummaries.isEmpty()) {
-            List<String> remainingPreview = remainingRequirementSummaries.stream().limit(12).toList();
-            String suffix = remainingRequirementSummaries.size() > remainingPreview.size()
-                ? " (plus %d more)".formatted(remainingRequirementSummaries.size() - remainingPreview.size())
-                : "";
-            planningNotes.add("Still needed after completing this recommended semester: "
-                + String.join(", ", remainingPreview) + suffix + ".");
-        }
 
         if (!canGraduateOnTime) {
             if (selectedTerm.courseCountByKind(CourseKind.HUMA) > 0) {
                 planningNotes.add("Consider a summer course for HUMA/elective pressure relief.");
             }
-            blockingIssues.add("Based on the courses still left after this recommendation, the current plan is not yet on track for on-time graduation without additional changes.");
+            blockingIssues.add("Current inputs may prevent an on-time four-year completion with the available replacements.");
         }
 
         if (recommendations.isEmpty() && blockingIssues.isEmpty()) {
-            blockingIssues.add("No set of section choices could be built for the selected semester without creating schedule conflicts.");
+            blockingIssues.add("No conflict-free sections were available for the selected semester.");
         }
 
         return new RecommendationResponseDTO(
@@ -260,14 +215,8 @@ public class RecommendationService {
                 request.getSemester(),
                 normalizeCompletedCourseList(request.getCompletedCourses()),
                 recommendations,
-            unavailableCourseCodes.stream()
-                .map(code -> displayLabelsByCourseCode.getOrDefault(code, code))
-                .distinct()
-                .limit(MAX_UNAVAILABLE_CODES)
-                .toList(),
+                new ArrayList<>(unavailableCourseCodes).stream().limit(MAX_UNAVAILABLE_CODES).toList(),
                 canGraduateOnTime,
-            unscheduledThisSemester,
-            remainingRequirementSummaries,
                 planningNotes,
                 blockingIssues
         );
@@ -304,10 +253,7 @@ public class RecommendationService {
             );
 
             if (matchingSections.isEmpty()) {
-                // Course is on the program sheet plan but has no catalog sections in the database.
-                // Keep it in the recommendations so the user knows it is expected, but flag it
-                // with a null section so the frontend can show a "details unavailable" message.
-                sectionsByCode.put(assignment.courseCode(), List.of());
+                unavailableCourseCodes.add(assignment.courseCode());
             } else {
                 sectionsByCode.put(assignment.courseCode(), matchingSections);
             }
@@ -318,23 +264,11 @@ public class RecommendationService {
                 .map(Map.Entry::getKey)
                 .toList();
 
-        // Courses with no catalog sections are tracked separately so they still appear in results.
-        Set<String> noCatalogData = sectionsByCode.entrySet().stream()
-                .filter(e -> e.getValue().isEmpty())
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toCollection(LinkedHashSet::new));
-
         Map<String, CourseSection> selectedSections = new LinkedHashMap<>();
         Set<ClassTimeKey> occupied = new HashSet<>();
 
         for (String courseCode : sortedByConstraint) {
-            List<CourseSection> candidates = sectionsByCode.get(courseCode);
-            if (candidates.isEmpty()) {
-                // No catalog data — will be included in results with a null section.
-                continue;
-            }
-
-            candidates = candidates.stream()
+            List<CourseSection> candidates = sectionsByCode.get(courseCode).stream()
                     .sorted(Comparator
                             .comparing((CourseSection section) -> !section.isOpen())
                             .thenComparing(Comparator.comparingInt(CourseSection::getOpenSeats).reversed())
@@ -350,35 +284,16 @@ public class RecommendationService {
                 markOccupied(chosen.get(), occupied);
             } else {
                 unavailableCourseCodes.add(courseCode);
-                blockingIssues.add("%s has catalog sections in %s, but every available option conflicts with another course already in the recommended schedule."
-                        .formatted(courseCode, catalogSemester));
+                blockingIssues.add("Time conflict prevented a section selection for %s in %s.".formatted(courseCode, catalogSemester));
             }
         }
 
-        if (selectedSections.size() + noCatalogData.size() < plannedCourses.size()) {
+        if (selectedSections.size() < plannedCourses.size()) {
             planningNotes.add("Conflict and/or availability filtering reduced the returned schedule list.");
-        }
-
-        if (!noCatalogData.isEmpty()) {
-            planningNotes.add("The following course(s) are recommended by your program sheet but have no section data in the catalog — "
-                    + "they are included in the results, but section details cannot be verified: "
-                    + String.join(", ", noCatalogData) + ".");
         }
 
         List<RecommendedCourseDTO> dtoList = new ArrayList<>();
         for (AssignedCourse assignment : plannedCourses) {
-            if (noCatalogData.contains(assignment.courseCode())) {
-                // Include the course with a null section so the frontend can show a warning.
-                dtoList.add(new RecommendedCourseDTO(
-                        assignment.courseCode(),
-                        assignment.title(),
-                        assignment.requirementCategory(),
-                        "unverified",
-                        null
-                ));
-                continue;
-            }
-
             CourseSection section = selectedSections.get(assignment.courseCode());
             if (section == null) {
                 continue;
@@ -398,8 +313,6 @@ public class RecommendationService {
 
     private void applyCreditBalancing(
             PlanTerm selectedTerm,
-            int selectedTermIndex,
-            List<PlanTerm> planTerms,
             RequirementPools pools,
             Set<String> completedCourses,
             Map<String, Integer> creditsByCourseCode,
@@ -408,114 +321,30 @@ public class RecommendationService {
     ) {
         int termCredits = selectedTerm.totalCredits(creditsByCourseCode);
 
-        // Fill low-credit schedules with the requested policy:
-        // 1) Prefer HUMA until there are 2 HUMA courses in this term.
-        // 2) Then prefer major-related alternatives.
-        // 3) Only allow a 3rd HUMA when no major-related fill is available (last resort to stay on-time).
-        while (termCredits < MIN_TERM_CREDITS) {
-            int humaCount = selectedTerm.courseCountByKind(CourseKind.HUMA);
-
-            Optional<String> humaCandidate = Optional.empty();
-            Optional<String> majorCandidate = Optional.empty();
-
-            if (humaCount < 2) {
-                humaCandidate = pickFirstAvailableForTerm(
-                        pools.humaCodes(),
-                        selectedTerm,
-                        completedCourses,
-                        requestedSeason,
-                        code -> code.startsWith("HUMA ")
-                );
-            }
-
-            if (humaCandidate.isPresent()) {
-                String code = humaCandidate.get();
-                selectedTerm.addCourse(new AssignedCourse(
-                        code,
-                        code,
-                        "Humanities Core Fill",
-                        "choice",
-                        CourseKind.HUMA
-                ));
-                planningNotes.add("Added HUMA fill %s to improve low-credit load.".formatted(code));
-                termCredits = selectedTerm.totalCredits(creditsByCourseCode);
-                continue;
-            }
-
-                Optional<String> futurePlanMajorCandidate = pickFirstFuturePlanMajorForTerm(
-                    selectedTermIndex,
-                    planTerms,
-                    selectedTerm,
-                    completedCourses,
-                    requestedSeason,
-                    pools
-                );
-
-                if (futurePlanMajorCandidate.isPresent()) {
-                String code = futurePlanMajorCandidate.get();
-                selectedTerm.addCourse(new AssignedCourse(
-                    code,
-                    code,
-                    "Future Sample Plan Priority Fill",
-                    "choice",
-                    CourseKind.MAJOR
-                ));
-                planningNotes.add("Added future sample-plan course %s before considering non-plan major fillers."
-                    .formatted(code));
-                termCredits = selectedTerm.totalCredits(creditsByCourseCode);
-                continue;
-                }
-
-            majorCandidate = pickFirstAvailableForTerm(
-                    pools.majorAlternatives(),
-                    selectedTerm,
-                    completedCourses,
-                    requestedSeason,
-                    code -> !code.startsWith("HUMA ")
-                        && !wouldExceedChoiceGroupLimit(code, selectedTerm, completedCourses, pools)
-            );
-
-            if (majorCandidate.isPresent()) {
-                String code = majorCandidate.get();
-                selectedTerm.addCourse(new AssignedCourse(
-                        code,
-                        code,
-                        "Major-Related Fill",
-                        "choice",
-                        CourseKind.MAJOR
-                ));
-                planningNotes.add("Added major-related fill %s after reaching the default HUMA limit.".formatted(code));
-                termCredits = selectedTerm.totalCredits(creditsByCourseCode);
-                continue;
-            }
-
-            if (humaCount < 3) {
-                Optional<String> thirdHuma = pickFirstAvailableForTerm(
-                        pools.humaCodes(),
-                        selectedTerm,
-                        completedCourses,
-                        requestedSeason,
-                        code -> code.startsWith("HUMA ")
-                );
-
-                if (thirdHuma.isPresent()) {
-                    String code = thirdHuma.get();
-                    selectedTerm.addCourse(new AssignedCourse(
-                            code,
-                            code,
-                            "Humanities Core Fill",
-                            "choice",
-                            CourseKind.HUMA
-                    ));
-                    planningNotes.add("Added a third HUMA (%s) because no major-related filler was available and credits were still below target."
-                            .formatted(code));
-                    termCredits = selectedTerm.totalCredits(creditsByCourseCode);
+        // Fill low-credit schedules with elective/huma where possible.
+        if (termCredits < MIN_TERM_CREDITS) {
+            for (String candidate : pools.electiveOrGeneralFillers()) {
+                if (selectedTerm.containsCourse(candidate) || completedCourses.contains(candidate)) {
                     continue;
                 }
-            }
+                if (!isCourseOfferedInSeason(candidate, requestedSeason)) {
+                    continue;
+                }
 
-            // No viable filler remains.
-            break;
+                selectedTerm.addCourse(new AssignedCourse(
+                        candidate,
+                        candidate,
+                        "General Elective Fill",
+                        "choice",
+                        CourseKind.ELECTIVE
+                ));
+
+                termCredits = selectedTerm.totalCredits(creditsByCourseCode);
+                if (termCredits >= MIN_TERM_CREDITS) {
+                    planningNotes.add("Added elective/HUMA filler to keep load near 15-18 credits.");
+                    break;
+                }
+            }
         }
 
         // Trim overloaded schedules by removing elective first, then HUMA.
@@ -528,92 +357,6 @@ public class RecommendationService {
             termCredits = selectedTerm.totalCredits(creditsByCourseCode);
             planningNotes.add("Removed %s to keep credit load within 15-18 when possible.".formatted(removable.get().courseCode()));
         }
-    }
-
-    private Optional<String> pickFirstAvailableForTerm(
-            List<String> courseCodes,
-            PlanTerm selectedTerm,
-            Set<String> completedCourses,
-            String season,
-            java.util.function.Predicate<String> extraFilter
-    ) {
-        return courseCodes.stream()
-                .map(this::normalizeCourseCode)
-                .filter(StringUtils::hasText)
-                .filter(extraFilter)
-                .filter(code -> !selectedTerm.containsCourse(code))
-                .filter(code -> !completedCourses.contains(code))
-                .filter(code -> isCourseOfferedInSeason(code, season))
-                .findFirst();
-    }
-
-    private Optional<String> pickFirstFuturePlanMajorForTerm(
-            int selectedTermIndex,
-            List<PlanTerm> planTerms,
-            PlanTerm selectedTerm,
-            Set<String> completedCourses,
-            String season,
-            RequirementPools pools
-    ) {
-        for (int index = selectedTermIndex + 1; index < planTerms.size(); index++) {
-            for (AssignedCourse course : planTerms.get(index).courses()) {
-                String code = normalizeCourseCode(course.courseCode());
-                if (!StringUtils.hasText(code)) {
-                    continue;
-                }
-                if (selectedTerm.containsCourse(code) || completedCourses.contains(code)) {
-                    continue;
-                }
-                if (course.kind() != CourseKind.MAJOR) {
-                    continue;
-                }
-                if (!isCourseOfferedInSeason(code, season)) {
-                    continue;
-                }
-                if (wouldExceedChoiceGroupLimit(code, selectedTerm, completedCourses, pools)) {
-                    continue;
-                }
-                return Optional.of(code);
-            }
-        }
-
-        return Optional.empty();
-    }
-
-    private boolean wouldExceedChoiceGroupLimit(
-            String candidate,
-            PlanTerm selectedTerm,
-            Set<String> completedCourses,
-            RequirementPools pools
-    ) {
-        for (ChoiceGroup group : pools.choiceGroups()) {
-            if (!group.courseCodes().contains(candidate)) {
-                continue;
-            }
-
-            int satisfied = (int) group.courseCodes().stream()
-                    .filter(code -> selectedTerm.containsCourse(code) || completedCourses.contains(code))
-                    .count();
-
-            if (satisfied >= group.chooseCount()) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private boolean hasSatisfiedChoiceRequirement(
-            Set<String> completedCourses,
-            List<String> requirementPool,
-            int chooseCount
-    ) {
-        long satisfied = requirementPool.stream()
-                .map(this::normalizeCourseCode)
-                .filter(completedCourses::contains)
-                .count();
-
-        return satisfied >= chooseCount;
     }
 
     private void replaceMajorWithAlternativesWhenPossible(
@@ -630,50 +373,9 @@ public class RecommendationService {
                 continue;
             }
 
-            Optional<ChoiceGroup> equivalentGroup = findChoiceGroupForCourse(major.courseCode(), pools);
-            if (equivalentGroup.isPresent()) {
-            ChoiceGroup group = equivalentGroup.get();
-
-            boolean alreadySatisfiedByAlternate = group.courseCodes().stream()
-                .filter(code -> !code.equals(major.courseCode()))
-                .anyMatch(code -> completedCourses.contains(code) || selectedTerm.containsCourse(code));
-
-            if (alreadySatisfiedByAlternate) {
-                selectedTerm.removeCourse(major.courseCode());
-                planningNotes.add("Removed %s because an alternate course already satisfies that requirement."
-                    .formatted(major.courseCode()));
-                continue;
-            }
-
-            Optional<String> sameRequirementAlternative = group.courseCodes().stream()
-                .map(this::normalizeCourseCode)
-                .filter(StringUtils::hasText)
-                .filter(code -> !code.equals(major.courseCode()))
-                .filter(code -> !selectedTerm.containsCourse(code))
-                .filter(code -> !completedCourses.contains(code))
-                .filter(code -> isCourseOfferedInSeason(code, requestedSeason))
-                .findFirst();
-
-            if (sameRequirementAlternative.isPresent()) {
-                selectedTerm.removeCourse(major.courseCode());
-                selectedTerm.addCourse(new AssignedCourse(
-                    sameRequirementAlternative.get(),
-                    sameRequirementAlternative.get(),
-                    major.requirementCategory(),
-                    "choice",
-                    CourseKind.MAJOR
-                ));
-                planningNotes.add("Replaced unavailable course %s with same-requirement alternative %s."
-                    .formatted(major.courseCode(), sameRequirementAlternative.get()));
-                continue;
-            }
-            }
-
             Optional<String> alternative = pools.majorAlternatives().stream()
-                .filter(code -> !code.equals(major.courseCode()))
                     .filter(code -> !selectedTerm.containsCourse(code))
                     .filter(code -> !completedCourses.contains(code))
-                .filter(code -> !wouldExceedChoiceGroupLimit(code, selectedTerm, completedCourses, pools))
                     .filter(code -> isCourseOfferedInSeason(code, requestedSeason))
                     .findFirst();
 
@@ -690,13 +392,6 @@ public class RecommendationService {
                         .formatted(major.courseCode(), alternative.get()));
             }
         }
-    }
-
-    private Optional<ChoiceGroup> findChoiceGroupForCourse(String courseCode, RequirementPools pools) {
-        String normalized = normalizeCourseCode(courseCode);
-        return pools.choiceGroups().stream()
-                .filter(group -> group.courseCodes().contains(normalized))
-                .findFirst();
     }
 
     private boolean moveCourseForwardWithinPlan(
@@ -817,27 +512,18 @@ public class RecommendationService {
         }
 
         if (normalized.contains("ssft") && codes.isEmpty()) {
-            if (hasSatisfiedChoiceRequirement(completedCourses, pools.ssftCodes(), 1)) {
-                return List.of();
-            }
             return pickFirstAvailable(pools.ssftCodes(), completedCourses, season)
                     .map(code -> List.of(new AssignedCourse(code, rawLabel, "Studies in Science, Faith, and Technology", "choice", CourseKind.MAJOR)))
                     .orElseGet(List::of);
         }
 
         if (normalized.contains("social science") && codes.isEmpty()) {
-            if (hasSatisfiedChoiceRequirement(completedCourses, pools.socialScienceCodes(), 1)) {
-                return List.of();
-            }
             return pickFirstAvailable(pools.socialScienceCodes(), completedCourses, season)
                     .map(code -> List.of(new AssignedCourse(code, rawLabel, "Foundations of the Social Sciences", "choice", CourseKind.MAJOR)))
                     .orElseGet(List::of);
         }
 
         if (normalized.contains("technical elective") && codes.isEmpty()) {
-            if (hasSatisfiedChoiceRequirement(completedCourses, pools.technicalElectiveCodes(), 1)) {
-                return List.of();
-            }
             return pickFirstAvailable(pools.technicalElectiveCodes(), completedCourses, season)
                     .map(code -> List.of(new AssignedCourse(code, rawLabel, "Technical Elective", "choice", CourseKind.MAJOR)))
                     .orElseGet(List::of);
@@ -848,36 +534,6 @@ public class RecommendationService {
             List<AssignedCourse> assignments = new ArrayList<>();
 
             if (normalized.contains(" or ")) {
-                List<List<String>> alternatives = parseAlternativeCourseGroups(rawLabel);
-
-                // If any whole alternative is already satisfied, this requirement is complete.
-                boolean alreadySatisfied = alternatives.stream()
-                        .anyMatch(group -> !group.isEmpty() && group.stream().allMatch(completedCourses::contains));
-                if (alreadySatisfied) {
-                    return assignments;
-                }
-
-                for (List<String> group : alternatives) {
-                    if (group.isEmpty()) {
-                        continue;
-                    }
-
-                    boolean allOffered = group.stream().allMatch(code -> isCourseOfferedInSeason(code, season));
-                    if (!allOffered) {
-                        continue;
-                    }
-
-                    for (String code : group) {
-                        if (!completedCourses.contains(code)) {
-                            assignments.add(new AssignedCourse(code, rawLabel, "Sample Plan Course", "required", classifyKind(code)));
-                        }
-                    }
-
-                    if (!assignments.isEmpty()) {
-                        return assignments;
-                    }
-                }
-
                 Optional<String> chosen = pickFirstAvailable(codes, completedCourses, season);
                 chosen.ifPresent(code -> assignments.add(new AssignedCourse(code, rawLabel, "Sample Plan Course", "required", classifyKind(code))));
                 return assignments;
@@ -902,7 +558,6 @@ public class RecommendationService {
         List<String> ssft = new ArrayList<>();
         List<String> technical = new ArrayList<>();
         List<String> majorAlternatives = new ArrayList<>();
-        List<ChoiceGroup> choiceGroups = new ArrayList<>();
 
         for (JsonNode category : root.path("requirementCategories")) {
             String title = category.path("title").asText("").toLowerCase(Locale.ROOT);
@@ -928,21 +583,7 @@ public class RecommendationService {
 
             // Major alternatives collected from selection and selectionGroups to support replacement logic.
             majorAlternatives.addAll(selectionCourses);
-
-            int selectionChoose = category.path("selection").path("choose").asInt(selectionCourses.size());
-            if (selectionCourses.size() > selectionChoose && selectionChoose > 0) {
-                choiceGroups.add(new ChoiceGroup(selectionChoose, new LinkedHashSet<>(selectionCourses)));
-            }
-
-            category.path("selectionGroups").forEach(group -> {
-                List<String> groupCourses = extractCourseCodes(group.path("from"));
-                majorAlternatives.addAll(groupCourses);
-
-                int groupChoose = group.path("choose").asInt(groupCourses.size());
-                if (groupCourses.size() > groupChoose && groupChoose > 0) {
-                    choiceGroups.add(new ChoiceGroup(groupChoose, new LinkedHashSet<>(groupCourses)));
-                }
-            });
+            category.path("selectionGroups").forEach(group -> majorAlternatives.addAll(extractCourseCodes(group.path("from"))));
         }
 
         List<String> fillers = new ArrayList<>();
@@ -957,8 +598,7 @@ public class RecommendationService {
                 distinctList(ssft),
                 distinctList(technical),
                 distinctList(majorAlternatives),
-                distinctList(fillers),
-                choiceGroups
+                distinctList(fillers)
         );
     }
 
@@ -1093,81 +733,6 @@ public class RecommendationService {
                 .reduce((first, second) -> second);
     }
 
-    private List<AssignedCourse> collectRemainingUntakenSamplePlanCourses(
-            List<PlanTerm> planTerms,
-            Set<String> completedCourses,
-            PlanTerm selectedTerm,
-            Set<String> unavailableCourseCodes
-    ) {
-        List<AssignedCourse> remaining = new ArrayList<>();
-
-        for (PlanTerm term : planTerms) {
-            for (AssignedCourse course : term.courses()) {
-                String code = normalizeCourseCode(course.courseCode());
-                if (!StringUtils.hasText(code)) {
-                    continue;
-                }
-                if (completedCourses.contains(code)) {
-                    continue;
-                }
-                if (selectedTerm.containsCourse(code) && !unavailableCourseCodes.contains(code)) {
-                    continue;
-                }
-                remaining.add(course);
-            }
-        }
-
-        return remaining;
-    }
-
-    private Map<String, String> buildDisplayLabelsByCourseCode(List<PlanTerm> planTerms) {
-        Map<String, String> labels = new LinkedHashMap<>();
-
-        for (PlanTerm term : planTerms) {
-            for (AssignedCourse course : term.courses()) {
-                labels.putIfAbsent(course.courseCode(), describeOutstandingRequirement(course));
-            }
-        }
-
-        return labels;
-    }
-
-    private String describeOutstandingRequirement(AssignedCourse course) {
-        String normalizedTitle = Optional.ofNullable(course.title()).orElse("").trim();
-        String normalizedCode = normalizeCourseCode(course.courseCode());
-
-        if (!StringUtils.hasText(normalizedTitle)) {
-            return normalizedCode;
-        }
-
-        String lowered = normalizedTitle.toLowerCase(Locale.ROOT);
-        boolean genericLabel = lowered.contains("course")
-                || lowered.contains("elective")
-                || lowered.contains("requirement")
-                || lowered.contains(" or ");
-
-        if (genericLabel && !normalizedTitle.equalsIgnoreCase(normalizedCode)) {
-            return normalizedTitle;
-        }
-
-        return normalizedCode;
-    }
-
-    private List<String> summarizeRequirements(List<AssignedCourse> courses) {
-        LinkedHashMap<String, Integer> countsByLabel = new LinkedHashMap<>();
-
-        for (AssignedCourse course : courses) {
-            String label = describeOutstandingRequirement(course);
-            countsByLabel.merge(label, 1, Integer::sum);
-        }
-
-        return countsByLabel.entrySet().stream()
-                .map(entry -> entry.getValue() > 1
-                        ? "%s (%d remaining)".formatted(entry.getKey(), entry.getValue())
-                        : entry.getKey())
-                .toList();
-    }
-
     private String seasonForTermIndex(int termIndex) {
         return termIndex % 2 == 0 ? "Fall" : "Spring";
     }
@@ -1224,13 +789,6 @@ public class RecommendationService {
             result.add("%s %s".formatted(matcher.group(1), matcher.group(2)));
         }
         return distinctList(result);
-    }
-
-    private List<List<String>> parseAlternativeCourseGroups(String text) {
-        return Arrays.stream(text.split("(?i)\\s+or\\s+"))
-                .map(this::parseCourseTokens)
-                .filter(group -> !group.isEmpty())
-                .toList();
     }
 
     private ParsedCode parseCourseCode(String code) {
@@ -1320,14 +878,7 @@ public class RecommendationService {
             List<String> ssftCodes,
             List<String> technicalElectiveCodes,
             List<String> majorAlternatives,
-            List<String> electiveOrGeneralFillers,
-            List<ChoiceGroup> choiceGroups
-        ) {
-        }
-
-        private record ChoiceGroup(
-            int chooseCount,
-            Set<String> courseCodes
+            List<String> electiveOrGeneralFillers
     ) {
     }
 

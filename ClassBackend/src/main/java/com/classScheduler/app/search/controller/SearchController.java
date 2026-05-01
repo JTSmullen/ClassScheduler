@@ -31,13 +31,12 @@ public class SearchController {
     }
 
     @PostMapping("/filter")
-    // @RequestBody used when data is sent as JSON in the request body
-    // Include default page number and size. Embed these parameters in the URL but DTO in JSON body
     public ResponseEntity<SearchResponseDTO> searchAndFilter(@RequestBody SearchFilterDTO filters, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "50") int size) {
         Pageable pageable = PageRequest.of(page, size);
-
         return ResponseEntity.ok(searchService.searchAndFilter(filters, pageable));
     }
+
+    //get initial filter options global
 
     @GetMapping("/search/{id}")
     // @GetMapping is used when data is retrieved
@@ -47,7 +46,7 @@ public class SearchController {
     }
 
     @GetMapping("/filter/options")
-    public ResponseEntity<FilterOptionsDTO> getFilterOptionsDTO() {
-        return ResponseEntity.ok(searchService.buildFilterOptionsDTO());
+    public ResponseEntity<FilterOptionsDTO> globalFilterOptions() {
+        return ResponseEntity.ok(searchService.globalFilterOptionsDTO());
     }
 }

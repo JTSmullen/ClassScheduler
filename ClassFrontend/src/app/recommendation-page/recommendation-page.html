@@ -17,21 +17,6 @@
 
   <!-- Main request form: shown once options are available -->
   <form class="panel form-panel" *ngIf="!loadingOptions" (submit)="handleGenerateSchedule($event)">
-    <div class="form-intro">
-      <div>
-        <span class="eyebrow">Current selection</span>
-        <strong>{{ selectedProgramLabel }}</strong>
-      </div>
-      <div>
-        <span class="eyebrow">Target semester</span>
-        <strong>{{ selectedSemester || 'Choose one below' }}</strong>
-      </div>
-      <div>
-        <span class="eyebrow">Completed courses</span>
-        <strong>{{ parsedCourseCodes.length }}</strong>
-      </div>
-    </div>
-
     <!-- Completed courses are entered as comma-separated text and parsed in TS -->
     <label for="completedCourses">Completed Course Codes</label>
     <textarea
@@ -78,37 +63,9 @@
   <!-- Results panel appears only after backend responds successfully -->
   <div class="panel" *ngIf="recommendationResponse">
     <h2>Generated Schedule Results</h2>
-    <p class="results-subtitle">
-      Program {{ recommendationResponse.programCode }} for {{ recommendationResponse.semester }}
+    <p>
+      Program: {{ recommendationResponse.programCode }} | Semester: {{ recommendationResponse.semester }}
     </p>
-
-    <div class="results-overview">
-      <article class="overview-card overview-card-status" [class.overview-card-risk]="!recommendationResponse.canGraduateOnTime">
-        <span class="eyebrow">Graduation outlook</span>
-        <strong>{{ recommendationResponse.canGraduateOnTime ? 'On track' : 'Needs attention' }}</strong>
-        <p>
-          {{ recommendationResponse.canGraduateOnTime ? 'Current plan still supports on-time graduation.' : 'Review blockers and remaining requirements before the next registration cycle.' }}
-        </p>
-      </article>
-
-      <article class="overview-card">
-        <span class="eyebrow">Recommended now</span>
-        <strong>{{ recommendationCount }}</strong>
-        <p>Courses in this semester's suggested schedule.</p>
-      </article>
-
-      <article class="overview-card">
-        <span class="eyebrow">Still required later</span>
-        <strong>{{ remainingRequirementCount }}</strong>
-        <p>Requirement items left after this semester.</p>
-      </article>
-
-      <article class="overview-card">
-        <span class="eyebrow">Needs review</span>
-        <strong>{{ unavailableCourseCount + blockingIssueCount }}</strong>
-        <p>Unavailable courses plus blocking issues that may affect the plan.</p>
-      </article>
-    </div>
 
     <div *ngIf="recommendationResponse.canGraduateOnTime" class="panel-success">
       On-time graduation status: On track
@@ -124,20 +81,6 @@
       </ul>
     </div>
 
-    <div *ngIf="recommendationResponse.unscheduledThisSemester.length" class="panel panel-warning">
-      <h3>Not Scheduled This Semester</h3>
-      <ul>
-        <li *ngFor="let item of recommendationResponse.unscheduledThisSemester">{{ item }}</li>
-      </ul>
-    </div>
-
-    <div *ngIf="recommendationResponse.remainingRequirementsAfterSemester.length" class="panel panel-notes">
-      <h3>Still Required After This Semester</h3>
-      <ul>
-        <li *ngFor="let item of recommendationResponse.remainingRequirementsAfterSemester">{{ item }}</li>
-      </ul>
-    </div>
-
     <div *ngIf="recommendationResponse.blockingIssues.length" class="panel panel-error">
       <h3>Blocking Issues</h3>
       <ul>
@@ -147,38 +90,25 @@
 
     <!-- Courses not offered in the selected semester -->
     <div *ngIf="recommendationResponse.unavailableCourseCodes.length > 0" class="panel-warning">
-      <h3>Unavailable This Semester</h3>
-      <p>{{ recommendationResponse.unavailableCourseCodes.join(', ') }}</p>
+      Not offered this semester: {{ recommendationResponse.unavailableCourseCodes.join(', ') }}
     </div>
 
     <!-- Empty response state -->
-    <div *ngIf="recommendationResponse.recommendations.length === 0" class="empty-state">
-      <h3>No courses were scheduled</h3>
-      <p>Use the notes and blockers above to see why this semester could not be filled.</p>
+    <div *ngIf="recommendationResponse.recommendations.length === 0">
+      No recommendations were returned for this request.
     </div>
 
     <!-- Non-empty response state -->
-    <div class="section-heading" *ngIf="recommendationResponse.recommendations.length > 0">
-      <div>
-        <h3>Recommended Courses</h3>
-        <p>These are the best matches the planner found for the selected term.</p>
-      </div>
-      <span class="section-count">{{ recommendationCount }} total</span>
-    </div>
-
     <div class="recommendation-list" *ngIf="recommendationResponse.recommendations.length > 0">
       <article class="recommendation-card" *ngFor="let item of recommendationResponse.recommendations">
         <h3>{{ item.courseCode }}</h3>
-        <p class="course-title">{{ item.courseTitle }}</p>
-        <p class="course-meta">
+        <p>{{ item.courseTitle }}</p>
+        <p>
           {{ item.requirementCategory }} | {{ item.recommendationType }}
         </p>
         <p *ngIf="item.section">
           Section {{ item.section.section }} - {{ item.section.subject }} {{ item.section.number }} -
           {{ item.section.location }}
-        </p>
-        <p *ngIf="!item.section" class="no-catalog-warning">
-          No section data found in the catalog. This course is recommended by your program sheet, but current availability and fit could not be verified.
         </p>
       </article>
     </div>

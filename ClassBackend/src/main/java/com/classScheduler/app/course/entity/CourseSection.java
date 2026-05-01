@@ -69,7 +69,7 @@ public class CourseSection {
     @JsonProperty("total_seats")
     private int totalSeats;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "course_faculty", joinColumns = @JoinColumn(name = "section_id"))
     @Column(name = "faculty")
     @org.hibernate.annotations.Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)

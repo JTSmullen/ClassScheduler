@@ -1,5 +1,6 @@
 package com.classScheduler.app.security.config;
 
+import com.classScheduler.app.user.entities.Role;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -66,7 +67,7 @@ public class SecurityConfig {
                         .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
-                        .requestMatchers("/api/v1/analytics/**").permitAll()
+                        .requestMatchers("/api/v1/analytics/**").hasRole(String.valueOf(Role.ADMIN))
                         .anyRequest().authenticated()
                 )
                 .headers(headers -> headers.frameOptions(frame -> frame.disable()));
