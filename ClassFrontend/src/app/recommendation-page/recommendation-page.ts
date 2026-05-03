@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -42,7 +42,8 @@ export class RecommendationPage implements OnInit {
 
   constructor(
     private router: Router,
-    private recommendationService: RecommendationService
+    private recommendationService: RecommendationService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -117,11 +118,13 @@ export class RecommendationPage implements OnInit {
         next: (response) => {
           this.recommendationResponse = response;
           this.generatingSchedule = false;
+          this.cdr.markForCheck();
         },
         error: (error) => {
           this.generatingSchedule = false;
           this.requestError =
             error?.error?.detail || error?.error?.message || 'Unable to generate schedule right now.';
+          this.cdr.markForCheck();
         },
       });
   }
@@ -145,12 +148,14 @@ export class RecommendationPage implements OnInit {
         }
 
         this.loadingOptions = false;
+        this.cdr.markForCheck();
       },
       error: (error) => {
         this.loadingOptions = false;
         // Prefer backend-provided details, then fallback to a generic message.
         this.optionsError =
           error?.error?.detail || error?.error?.message || 'Could not load recommendation options.';
+        this.cdr.markForCheck();
       },
     });
   }
