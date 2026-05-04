@@ -724,7 +724,7 @@
     position: fixed
     inset: 0
     background-color: rgba(0, 0, 0, 0.5)
-    z-index: 50
+    z-index: 51
     display: flex
     align-items: center
     justify-content: center
@@ -744,14 +744,35 @@
         display: flex
         justify-content: space-between
         align-items: center
+        gap: 1rem
         padding: 1.5rem
         border-bottom: 1px solid #e2e8f0
+
+        .back-btn
+          background: transparent
+          border: none
+          color: #6b7280
+          cursor: pointer
+          width: 2.5rem
+          height: 2.5rem
+          display: grid
+          place-items: center
+          border-radius: 0.75rem
+          transition: background-color 0.2s ease, color 0.2s ease
+          flex-shrink: 0
+
+          &:hover
+            background-color: #f3f4f6
+            color: #111827
 
         h2
           font-size: 1.5rem
           font-weight: 700
           color: #1e293b
           margin: 0
+          flex: 1
+          min-width: 0
+          word-break: break-word
 
         .close-btn
           background: transparent
@@ -764,6 +785,7 @@
           place-items: center
           border-radius: 0.75rem
           transition: background-color 0.2s ease, color 0.2s ease
+          flex-shrink: 0
 
           &:hover
             background-color: #f3f4f6
