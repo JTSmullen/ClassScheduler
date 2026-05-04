@@ -2,27 +2,24 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
-// Dropdown option shape for program sheet selection.
 export interface ProgramSheetOption {
   programCode: string;
   label: string;
 }
 
-// Response shape for initial page options (program sheets + semesters).
 export interface RecommendationOptionsResponse {
   programSheets: ProgramSheetOption[];
   semesters: string[];
 }
 
-// Request payload sent when user clicks "Generate Schedule".
 export interface RecommendationRequest {
   programCode: string;
   semester: string;
   completedCourses: string[];
 }
 
-// Minimal section details returned for each recommended course.
 export interface RecommendedCourseSection {
+  id: number;
   subject: string;
   number: number;
   section: string;
@@ -30,7 +27,6 @@ export interface RecommendedCourseSection {
   location: string;
 }
 
-// One recommended course in the response list.
 export interface RecommendedCourse {
   courseCode: string;
   courseTitle: string;
@@ -39,7 +35,6 @@ export interface RecommendedCourse {
   section: RecommendedCourseSection;
 }
 
-// Full response returned by the recommendation endpoint.
 export interface RecommendationResponse {
   programCode: string;
   semester: string;
@@ -61,28 +56,24 @@ export class RecommendationService {
 
   constructor(private http: HttpClient) {}
 
-  // Gets dropdown data required to render the form.
   getOptions(token: string): Observable<RecommendationOptionsResponse> {
     return this.http.get<RecommendationOptionsResponse>(`${this.RECOMMENDATION_URL}/options`, {
       headers: this.buildAuthHeaders(token),
     });
   }
 
-  // Sends user inputs and returns recommendation results.
   generateSchedule(request: RecommendationRequest, token: string): Observable<RecommendationResponse> {
     return this.http.post<RecommendationResponse>(this.RECOMMENDATION_URL, request, {
       headers: this.buildAuthHeaders(token),
     });
   }
 
-  // Creates a new schedule with the given name.
   createSchedule(name: string, token: string): Observable<{ id: number }> {
     return this.http.post<{ id: number }>(`${this.SCHEDULE_URL}/create`, { name }, {
       headers: this.buildAuthHeaders(token),
     });
   }
 
-  // Adds a course to an existing schedule.
   addCourseToSchedule(scheduleId: number, courseId: number, token: string): Observable<any> {
     return this.http.post<any>(
       `${this.SCHEDULE_URL}/add`,
@@ -91,7 +82,6 @@ export class RecommendationService {
     );
   }
 
-  // Searches for courses by keyword to get their IDs.
   searchCourses(
     keyword: string,
     token: string
@@ -103,7 +93,6 @@ export class RecommendationService {
     );
   }
 
-  // Centralized auth header builder for all recommendation requests.
   private buildAuthHeaders(token: string): HttpHeaders {
     return new HttpHeaders({ Authorization: `Bearer ${token}` });
   }
