@@ -345,7 +345,6 @@ export class SchedulePage implements OnInit {
       next: (courseDetails) => {
         this.selectedSearchCourse.set(courseDetails);
         this.showCourseDetails.set(true);
-        this.searchPanelOpen.set(false);
       },
       error: (error) => {
         console.error('Failed to fetch course details:', error);
@@ -388,6 +387,7 @@ export class SchedulePage implements OnInit {
         this.loadScheduleDetails(scheduleId);
         this.addingCourse.set(false);
         this.closeCourseDetails();
+        this.closeSearchPanel();
       },
       error: (error) => {
         console.error('Unable to add course:', error);

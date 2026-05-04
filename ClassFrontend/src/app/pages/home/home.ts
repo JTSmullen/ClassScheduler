@@ -20,6 +20,7 @@ export class Home implements OnInit {
   scheduleName = '';
   loading = false;
   errorMessage = '';
+  welcomeName = '';
 
   // Form fields for login (if needed on this page)
   username = '';
@@ -37,6 +38,15 @@ export class Home implements OnInit {
     if (isPlatformBrowser(this.platformId)) {
       this.loadSchedules();
     }
+    const nameForWelcome = localStorage.getItem('current_user')
+    if (nameForWelcome) {
+        try {
+          const user = JSON.parse(nameForWelcome);
+          this.welcomeName = user.firstName;
+        } catch (e) {
+          console.error('Failed to parse user from storage', e);
+        }
+      }
   }
 
   /**
@@ -75,10 +85,14 @@ export class Home implements OnInit {
     this.errorMessage = '';
     this.loading = true;
 
-    const newSchedule = { name: this.scheduleName };
+    const newScheduleRequest = { name: this.scheduleName };
 
     this.http
+<<<<<<< HEAD
       .post<any>('http://localhost:8080/api/v1/schedule/create', newSchedule)
+=======
+      .post<any>('https://lfrgiy6ixwc3psnimphcam4npa0rxxbq.lambda-url.us-east-2.on.aws/api/v1/schedule/create', newScheduleRequest)
+>>>>>>> main
       .subscribe({
         next: (response) => {
           this.loading = false;

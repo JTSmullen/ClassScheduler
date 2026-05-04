@@ -18,7 +18,6 @@ public class AnalyticsController {
     public AnalyticsController(MeterRegistry registry) {
         this.registry = registry;
     }
-
     public record MethodStat(String method, long calls, double avgMs, double maxMs) {}
 
     @GetMapping("/stats")

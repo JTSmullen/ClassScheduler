@@ -306,6 +306,9 @@
   <div *ngIf="showCourseDetails() && selectedSearchCourse()" class="course-details-dialog">
     <div class="dialog-content add-course-dialog">
       <div class="dialog-header">
+        <button class="back-btn" (click)="closeCourseDetails()" title="Back to search results">
+          <lucide-icon [img]="ChevronLeft"></lucide-icon>
+        </button>
         <h2>{{ selectedSearchCourse()!.subject }} {{ selectedSearchCourse()!.number }}: {{ selectedSearchCourse()!.name }}</h2>
         <button class="close-btn" (click)="closeCourseDetails()">
           <lucide-icon [img]="X" class="icon"></lucide-icon>
@@ -440,7 +443,7 @@
           <lucide-icon [img]="Plus" class="icon"></lucide-icon>
           {{ addingCourse() ? 'Adding...' : 'Add to Schedule' }}
         </button>
-        <button class="close-btn" (click)="closeCourseDetails()">Cancel</button>
+        <button class="close-btn" (click)="closeCourseDetails()">Back</button>
       </div>
     </div>
   </div>

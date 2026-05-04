@@ -95,16 +95,23 @@
   // Main Content Area
   .content
     flex: 1
-    overflow: hidden
+    display: flex
+    flex-direction: column
+    min-height: 0
 
     &.compare-mode
       display: flex
+      flex-direction: row
       gap: 1rem
       padding: 1rem
+      min-height: 0
 
       .compare-panel
         flex: 1
+        display: flex
+        flex-direction: column
         min-width: 0
+        min-height: 0
 
       .divider
         width: 1px
@@ -112,15 +119,30 @@
         flex-shrink: 0
 
     &.single-mode
+      display: flex
+      flex-direction: column
       padding: 1rem
+      min-height: 0
 
       .single-panel
-        height: 100%
+        flex: 1
+        display: flex
+        flex-direction: column
+        min-height: 0
+
+  // --- FIX: Penetrate encapsulation to target WeekGridComponent ---
+  ::ng-deep app-week-grid
+    display: flex
+    flex-direction: column
+    flex: 1
+    min-height: 0
+    min-width: 0
 
   // Week Grid Component
-  .week-grid
+  ::ng-deep .week-grid
     flex: 1
     min-width: 0
+    min-height: 0
     display: flex
     flex-direction: column
 
@@ -146,7 +168,8 @@
 
     .grid-container
       flex: 1
-      overflow: auto
+      overflow-y: auto
+      min-height: 0
 
       .grid-wrapper
         display: inline-block
@@ -193,6 +216,7 @@
 
             .time-slot
               height: 60px
+              box-sizing: border-box // FIX: Prevents padding from breaking 60px height calculation
               border-bottom: 1px solid #e2e8f0
               padding: 0.25rem 0.5rem
               font-size: 0.75rem
@@ -213,6 +237,7 @@
             // Hour slots
             .hour-slot
               height: 60px
+              box-sizing: border-box // FIX: Match time labels height explicitly
               border-bottom: 1px solid #e2e8f0
               transition: background-color 0.2s ease
 
@@ -224,6 +249,7 @@
               position: absolute
               left: 2px
               right: 2px
+              box-sizing: border-box
               border-radius: 4px
               padding: 0.25rem 0.5rem
               font-size: 0.75rem
@@ -698,7 +724,7 @@
     position: fixed
     inset: 0
     background-color: rgba(0, 0, 0, 0.5)
-    z-index: 50
+    z-index: 51
     display: flex
     align-items: center
     justify-content: center
@@ -718,14 +744,35 @@
         display: flex
         justify-content: space-between
         align-items: center
+        gap: 1rem
         padding: 1.5rem
         border-bottom: 1px solid #e2e8f0
+
+        .back-btn
+          background: transparent
+          border: none
+          color: #6b7280
+          cursor: pointer
+          width: 2.5rem
+          height: 2.5rem
+          display: grid
+          place-items: center
+          border-radius: 0.75rem
+          transition: background-color 0.2s ease, color 0.2s ease
+          flex-shrink: 0
+
+          &:hover
+            background-color: #f3f4f6
+            color: #111827
 
         h2
           font-size: 1.5rem
           font-weight: 700
           color: #1e293b
           margin: 0
+          flex: 1
+          min-width: 0
+          word-break: break-word
 
         .close-btn
           background: transparent
@@ -738,6 +785,7 @@
           place-items: center
           border-radius: 0.75rem
           transition: background-color 0.2s ease, color 0.2s ease
+          flex-shrink: 0
 
           &:hover
             background-color: #f3f4f6

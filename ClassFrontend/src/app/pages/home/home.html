@@ -1,8 +1,13 @@
 <div class="home-container">
   <header class="header-wrapper">
     <div class="welcome-section">
-      <h1>Welcome to the Home Page</h1>
-      <p>Checkout these buttons:</p>
+      <h1>
+        @if (welcomeName) {
+          Welcome, {{ welcomeName }}!
+        } @else {
+          Welcome to the Home Page
+        }
+      </h1>
     </div>
 
     <div class="logout-container">

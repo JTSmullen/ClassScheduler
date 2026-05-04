@@ -55,7 +55,13 @@ export interface RecommendationResponse {
   providedIn: 'root',
 })
 export class RecommendationService {
+<<<<<<< HEAD
   private readonly RECOMMENDATION_URL = 'http://localhost:8080/api/v1/recommendations';
+=======
+  private readonly RECOMMENDATION_URL = 'https://lfrgiy6ixwc3psnimphcam4npa0rxxbq.lambda-url.us-east-2.on.aws/api/v1/recommendations';
+  private readonly SCHEDULE_URL = 'https://lfrgiy6ixwc3psnimphcam4npa0rxxbq.lambda-url.us-east-2.on.aws/api/v1/schedule';
+  private readonly SEARCH_URL = 'https://lfrgiy6ixwc3psnimphcam4npa0rxxbq.lambda-url.us-east-2.on.aws/api/v1/search';
+>>>>>>> main
 
   constructor(private http: HttpClient) {}
 
@@ -71,6 +77,34 @@ export class RecommendationService {
     return this.http.post<RecommendationResponse>(this.RECOMMENDATION_URL, request, {
       headers: this.buildAuthHeaders(token),
     });
+  }
+
+  // Creates a new schedule with the given name.
+  createSchedule(name: string, token: string): Observable<{ id: number }> {
+    return this.http.post<{ id: number }>(`${this.SCHEDULE_URL}/create`, { name }, {
+      headers: this.buildAuthHeaders(token),
+    });
+  }
+
+  // Adds a course to an existing schedule.
+  addCourseToSchedule(scheduleId: number, courseId: number, token: string): Observable<any> {
+    return this.http.post<any>(
+      `${this.SCHEDULE_URL}/add`,
+      { schedule_id: scheduleId, course_id: courseId },
+      { headers: this.buildAuthHeaders(token) }
+    );
+  }
+
+  // Searches for courses by keyword to get their IDs.
+  searchCourses(
+    keyword: string,
+    token: string
+  ): Observable<{ results: Array<{ id: number; subject: string; number: number; section: string; name: string }> }> {
+    return this.http.post<any>(
+      `${this.SEARCH_URL}/filter?page=0&size=50`,
+      { keyword: keyword.trim() },
+      { headers: this.buildAuthHeaders(token) }
+    );
   }
 
   // Centralized auth header builder for all recommendation requests.
