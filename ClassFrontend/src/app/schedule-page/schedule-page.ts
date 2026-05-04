@@ -387,6 +387,7 @@ export class SchedulePage implements OnInit {
         this.loadScheduleDetails(scheduleId);
         this.addingCourse.set(false);
         this.closeCourseDetails();
+        this.closeSearchPanel();
       },
       error: (error) => {
         console.error('Unable to add course:', error);
