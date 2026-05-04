@@ -73,10 +73,10 @@ export class Home implements OnInit {
     this.errorMessage = '';
     this.loading = true;
 
-    const newSchedule = { name: this.scheduleName };
+    const newScheduleRequest = { name: this.scheduleName };
 
     this.http
-      .post<any>('https://lfrgiy6ixwc3psnimphcam4npa0rxxbq.lambda-url.us-east-2.on.aws/api/v1/schedule/create', newSchedule)
+      .post<any>('https://lfrgiy6ixwc3psnimphcam4npa0rxxbq.lambda-url.us-east-2.on.aws/api/v1/schedule/create', newScheduleRequest)
       .subscribe({
         next: (response) => {
           this.loading = false;
