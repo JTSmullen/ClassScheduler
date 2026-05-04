@@ -2,6 +2,7 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { concatMap, from, of } from 'rxjs';
 import {
   RecommendationService,
   ProgramSheetOption,
@@ -30,10 +31,12 @@ export class RecommendationPage implements OnInit {
   // UI state flags used by the template to show loading text and disable actions.
   loadingOptions = false;
   generatingSchedule = false;
+  savingSchedule = false;
 
   // Error messages shown in the page when API calls fail.
   optionsError = '';
   requestError = '';
+  saveError = '';
 
   // Data from the backend used by dropdowns and result rendering.
   programSheets: ProgramSheetOption[] = [];
@@ -127,6 +130,108 @@ export class RecommendationPage implements OnInit {
           this.cdr.markForCheck();
         },
       });
+  }
+
+  handleSaveAsSchedule(): void {
+    // Token can expire or be removed while page is open, so re-check here.
+    const token = this.getAuthToken();
+    if (!token) {
+      this.router.navigate(['/login']);
+      return;
+    }
+
+    if (!this.recommendationResponse) {
+      this.saveError = 'No recommendations to save.';
+      this.cdr.markForCheck();
+      return;
+    }
+
+    this.savingSchedule = true;
+    this.saveError = '';
+
+    // Create a new schedule with the semester as the name
+    const scheduleName = `${this.recommendationResponse.semester} - Recommended Schedule`;
+
+    this.recommendationService.createSchedule(scheduleName, token).subscribe({
+      next: (scheduleResponse) => {
+        const scheduleId = scheduleResponse.id;
+        // After creating the schedule, add all recommended courses
+        this.addRecommendedCoursesToSchedule(scheduleId, token);
+      },
+      error: (error) => {
+        this.savingSchedule = false;
+        this.saveError =
+          error?.error?.detail || error?.error?.message || 'Failed to create schedule.';
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  private addRecommendedCoursesToSchedule(scheduleId: number, token: string): void {
+    if (!this.recommendationResponse) {
+      this.saveError = 'Recommendation data is missing.';
+      this.savingSchedule = false;
+      this.cdr.markForCheck();
+      return;
+    }
+
+    const courses = this.recommendationResponse.recommendations;
+
+    // If no courses, navigate directly
+    if (courses.length === 0) {
+      this.navigateToSchedule(scheduleId);
+      return;
+    }
+
+    // Add each course ONE AT A TIME using concatMap so the backend conflict check
+    // never sees two in-flight saves simultaneously (which caused false conflicts).
+    from(courses).pipe(
+      concatMap((course) =>
+        this.recommendationService.searchCourses(course.courseCode, token).pipe(
+          concatMap((searchResponse) => {
+            const matchedCourse = searchResponse.results.find(
+              (c: any) =>
+                c.subject === course.section.subject &&
+                c.number === course.section.number &&
+                c.section === course.section.section
+            );
+            if (!matchedCourse) {
+              console.warn(`Could not find section for ${course.courseCode}`);
+              return of(null);
+            }
+            return this.recommendationService
+              .addCourseToSchedule(scheduleId, matchedCourse.id, token)
+              .pipe(
+                concatMap(() => of(null)),
+              );
+          }),
+        )
+      )
+    ).subscribe({
+      error: (error) => {
+        console.error('Failed to add a course to schedule:', error);
+      },
+      complete: () => {
+        this.navigateToSchedule(scheduleId);
+      },
+    });
+  }
+
+  private navigateToSchedule(scheduleId: number): void {
+    this.savingSchedule = false;
+    this.cdr.markForCheck();
+    // Update localStorage with the new schedule and navigate to schedule page
+    const user = this.getStoredUser();
+    if (user) {
+      user.schedules.push({ id: scheduleId, name: `${this.recommendationResponse?.semester} - Recommended Schedule` });
+      localStorage.setItem('user', JSON.stringify(user));
+    }
+    this.router.navigate(['/schedule'], { queryParams: { id: scheduleId } });
+  }
+
+  private getStoredUser(): any {
+    const userJson = localStorage.getItem('user');
+    return userJson ? JSON.parse(userJson) : null;
   }
 
   private loadOptions(token: string): void {
