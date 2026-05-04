@@ -38,6 +38,18 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
+/**
+ * Orchestrates recommendation generation from program-sheet requirements and course-section availability.
+ *
+ * Pipeline summary:
+ * 1) Normalize request inputs (semester + completed courses).
+ * 2) Materialize the sample four-year plan into term assignments with requirement metadata.
+ * 3) Detect untaken backlog from earlier terms.
+ * 4) Attempt to fit backlog into the selected term (replace electives/HUMA, then move majors forward when safe).
+ * 5) Rebalance selected-term credits toward the configured target window.
+ * 6) Resolve concrete catalog sections and remove time conflicts.
+ * 7) Return recommendations with planning notes, unavailable-course list, and blocking issues.
+ */
 public class RecommendationService {
 
     private static final int MAX_RECOMMENDATIONS = 7;
@@ -102,15 +114,15 @@ public class RecommendationService {
 
     @Transactional(readOnly = true)
     public RecommendationResponseDTO recommendCourses(RecommendationRequestDTO request) {
-        // Core high-level workflow (commented for future reference):
-        // 1) Parse/normalize completed courses and selected semester.
-        // 2) Build semester-by-semester sample plan from sampleFourYearPlan.
-        // 3) Remove completed courses and find backlog from semesters before selected term.
-        // 4) Try to place backlog into selected term by replacing electives first, then HUMA.
-        // 5) If needed, push selected-term major courses forward (<= Senior Spring) to open space.
-        // 6) Keep credits in the requested 15-18 range when possible.
-        // 7) Resolve real catalog sections and avoid time conflicts.
-        // 8) Return recommendations + notes explaining tradeoffs and blockers.
+        // End-to-end recommendation flow:
+        // 1) Validate/normalize the request semester and completed-course list.
+        // 2) Build all plan terms from sampleFourYearPlan and tag each assignment by requirement kind.
+        // 3) Collect untaken courses from earlier terms (backlog) and try to preserve sequence by inserting
+        //    them into the selected term using replacements first, then safe forward-shifts of movable majors.
+        // 4) Rebalance credits in the selected term (target window: MIN_TERM_CREDITS..MAX_TERM_CREDITS).
+        // 5) Swap unavailable major placeholders with valid alternatives when possible.
+        // 6) Resolve section offerings for the target catalog semester and choose conflict-free sections.
+        // 7) Compute graduation/on-time signal and attach user-facing planning notes + blocking issues.
         ProgramSheet programSheet = programSheetRepository.findByProgramCode(request.getProgramCode())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Program sheet not found"));
 
