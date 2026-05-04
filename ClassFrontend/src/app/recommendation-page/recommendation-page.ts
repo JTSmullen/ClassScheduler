@@ -2,6 +2,7 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { concatMap, from, of } from 'rxjs';
 import {
   RecommendationService,
   ProgramSheetOption,
@@ -175,8 +176,6 @@ export class RecommendationPage implements OnInit {
     }
 
     const courses = this.recommendationResponse.recommendations;
-    let addedCount = 0;
-    let failedCount = 0;
 
     // If no courses, navigate directly
     if (courses.length === 0) {
@@ -184,58 +183,21 @@ export class RecommendationPage implements OnInit {
       return;
     }
 
-    // Add each recommended course to the schedule
-    courses.forEach((course, index) => {
-      // Search for the course to get its ID by course code
-      const searchQuery = course.courseCode; // e.g., "CS101"
-
-      this.recommendationService.searchCourses(searchQuery, token).subscribe({
-        next: (searchResponse) => {
-          // Find the exact course match
-          const matchedCourse = searchResponse.results.find(
-            (c: any) =>
-              c.subject === course.section.subject &&
-              c.number === course.section.number &&
-              c.section === course.section.section
-          );
-
-          if (matchedCourse) {
-            // Add the course to the schedule
-            this.recommendationService.addCourseToSchedule(scheduleId, matchedCourse.id, token).subscribe({
-              next: () => {
-                addedCount++;
-                // If all courses have been processed, navigate to the schedule
-                if (addedCount + failedCount === courses.length) {
-                  this.navigateToSchedule(scheduleId);
-                }
-              },
-              error: (error) => {
-                failedCount++;
-                console.error(`Failed to add course ${course.courseCode}:`, error);
-                // If all courses have been processed, navigate to the schedule anyway
-                if (addedCount + failedCount === courses.length) {
-                  this.navigateToSchedule(scheduleId);
-                }
-              },
-            });
-          } else {
-            failedCount++;
-            console.warn(`Could not find course ${course.courseCode} in search results`);
-            // If all courses have been processed, navigate to the schedule
-            if (addedCount + failedCount === courses.length) {
-              this.navigateToSchedule(scheduleId);
-            }
-          }
-        },
-        error: (error) => {
-          failedCount++;
-          console.error(`Failed to search for course ${course.courseCode}:`, error);
-          // If all courses have been processed, navigate to the schedule
-          if (addedCount + failedCount === courses.length) {
-            this.navigateToSchedule(scheduleId);
-          }
-        },
-      });
+    // Add each course ONE AT A TIME using concatMap so the backend conflict check
+    // never sees two in-flight saves simultaneously (which caused false conflicts).
+    from(courses).pipe(
+      concatMap((course) =>
+        this.recommendationService.addCourseToSchedule(scheduleId, course.courseId, token).pipe(
+          concatMap(() => of(null)),
+        )
+      )
+    ).subscribe({
+      error: (error) => {
+        console.error('Failed to add a course to schedule:', error);
+      },
+      complete: () => {
+        this.navigateToSchedule(scheduleId);
+      },
     });
   }
 

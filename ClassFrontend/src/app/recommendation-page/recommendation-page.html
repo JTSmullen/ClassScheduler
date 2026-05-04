@@ -112,18 +112,5 @@
         </p>
       </article>
     </div>
-
-    <!-- Save as Schedule button -->
-    <div *ngIf="recommendationResponse.recommendations.length > 0" class="save-button-container">
-      <button
-        type="button"
-        class="save-button"
-        (click)="handleSaveAsSchedule()"
-        [disabled]="savingSchedule"
-      >
-        {{ savingSchedule ? 'Creating Schedule...' : 'Save as Schedule' }}
-      </button>
-      <div class="panel-error" *ngIf="saveError">{{ saveError }}</div>
-    </div>
   </div>
 </div>
