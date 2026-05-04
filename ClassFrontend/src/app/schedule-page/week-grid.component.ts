@@ -35,7 +35,17 @@ export class WeekGridComponent implements OnInit, OnChanges {
   }
 
   updateTotalCredits() {
-    this.totalCredits.set(this.events.reduce((sum, event) => sum + event.courseSection.credits, 0));
+    const uniqueCourseIds = new Set<number>();
+    let sum = 0;
+
+    for (const event of this.events) {
+      if (!uniqueCourseIds.has(event.courseSection.id)) {
+        uniqueCourseIds.add(event.courseSection.id);
+        sum += event.courseSection.credits;
+      }
+    }
+
+    this.totalCredits.set(sum);
   }
 
   formatHour(hour: number): string {
