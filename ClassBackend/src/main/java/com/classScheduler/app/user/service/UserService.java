@@ -41,9 +41,9 @@ public class UserService {
                 user.getId(),
                 user.getName(),
                 user.getFirstName(),
-                schedules
+                schedules,
+                user.getRole().name()
         );
 
     }
-
 }

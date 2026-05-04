@@ -61,6 +61,7 @@ export class RegisterPage {
                 name: user.name,
                 firstName: user.firstName,
                 schedules: user.schedules,
+                role: user.role
               })
             );
             this.loading = false;

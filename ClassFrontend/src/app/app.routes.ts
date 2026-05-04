@@ -6,6 +6,7 @@ import { Home } from './pages/home/home';
 import { SchedulePage } from './schedule-page/schedule-page';
 import { CreateSchedulePage } from './create-schedule-page/create-schedule-page'
 import { RecommendationPage } from './recommendation-page/recommendation-page';
+import { AnalyticsPageComponent } from './analytics/analytics-page.component';
 
 export const routes: Routes = [
   { path: '', component: LandingPage },
@@ -15,5 +16,6 @@ export const routes: Routes = [
   { path: 'schedule', component: SchedulePage },
   {path: 'create', component: CreateSchedulePage },
   { path: 'recommendations', component: RecommendationPage },
+  { path: 'analytics', component: AnalyticsPageComponent },
   { path: '**', redirectTo: '' },
 ];

@@ -12,14 +12,15 @@ export interface UserInfo {
   name: string;
   firstName: string;
   schedules: any[];
+  role: string
 }
 
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
-  private readonly AUTH_URL = 'https://lfrgiy6ixwc3psnimphcam4npa0rxxbq.lambda-url.us-east-2.on.aws/api/v1/auth';
-  private readonly USER_URL = 'https://lfrgiy6ixwc3psnimphcam4npa0rxxbq.lambda-url.us-east-2.on.aws/api/v1/user';
+  private readonly AUTH_URL = 'http://localhost:8080/api/v1/auth';
+  private readonly USER_URL = 'http://localhost:8080/api/v1/user';
 
   constructor(private http: HttpClient) {}
 

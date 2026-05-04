@@ -41,6 +41,7 @@ export class LoginPage {
                   name: user.name,
                   firstName: user.firstName,
                   schedules: user.schedules,
+                  role: user.role
                 })
               );
               this.loading = false;

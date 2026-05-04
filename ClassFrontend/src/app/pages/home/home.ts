@@ -15,6 +15,7 @@ import { AuthService, UserInfo } from '../../auth/auth.service';
 export class Home implements OnInit {
   // Signals for reactive UI
   schedules = signal<any[]>([]);
+  isAdmin = signal(false);
   showCreate = false;
   scheduleName = '';
   loading = false;
@@ -48,6 +49,7 @@ export class Home implements OnInit {
         try {
           const user = JSON.parse(rawUser);
           this.schedules.set(user.schedules || []);
+          this.isAdmin.set(user.role === 'ADMIN');
         } catch (e) {
           console.error('Failed to parse user from storage', e);
         }
@@ -76,7 +78,7 @@ export class Home implements OnInit {
     const newSchedule = { name: this.scheduleName };
 
     this.http
-      .post<any>('https://lfrgiy6ixwc3psnimphcam4npa0rxxbq.lambda-url.us-east-2.on.aws/api/v1/schedule/create', newSchedule)
+      .post<any>('http://localhost:8080/api/v1/schedule/create', newSchedule)
       .subscribe({
         next: (response) => {
           this.loading = false;
@@ -95,6 +97,7 @@ export class Home implements OnInit {
                   name: user.name,
                   firstName: user.firstName,
                   schedules: user.schedules,
+                  role: user.role
                 };
 
                 localStorage.setItem('current_user', JSON.stringify(updatedUserData));
@@ -143,6 +146,7 @@ export class Home implements OnInit {
                     name: user.name,
                     firstName: user.firstName,
                     schedules: user.schedules,
+                    role: user.role
                   })
                 );
                 this.loadSchedules();

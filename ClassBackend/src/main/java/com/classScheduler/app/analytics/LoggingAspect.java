@@ -27,9 +27,8 @@ public class LoggingAspect {
 
         String methodName = joinPoint.getSignature().getName();
 
-        Timer timer = Timer.builder("http.request.duration")
-                .tag("method", methodName)
-                .register(registry);
+        // Use the timer.record() helper which handles the timing and registration internally
+        Timer timer = registry.timer("http.request.duration", "method", methodName);
 
         long start = System.nanoTime();
 
@@ -37,6 +36,7 @@ public class LoggingAspect {
             return joinPoint.proceed();
         } finally {
             long duration = System.nanoTime() - start;
+            // Record the duration in nanoseconds
             timer.record(duration, TimeUnit.NANOSECONDS);
         }
     }

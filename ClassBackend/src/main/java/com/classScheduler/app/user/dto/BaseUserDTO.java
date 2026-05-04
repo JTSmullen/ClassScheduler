@@ -17,5 +17,5 @@ public class BaseUserDTO {
     private String firstName;
 
     private List<UserScheduleDTO> schedules;
-
+    private String role;
 }

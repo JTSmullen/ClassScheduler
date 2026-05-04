@@ -33,6 +33,10 @@
       <button class="btn btn-outline" routerLink="/recommendations">
         Get Recommendations
       </button>
+
+      <button *ngIf="isAdmin()" class="btn btn-logout" routerLink="/analytics">
+        View System Analytics
+      </button>
     </div>
 
     <div *ngIf="showCreate" class="create-dropdown">

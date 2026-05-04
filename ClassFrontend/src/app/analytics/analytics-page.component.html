@@ -1,0 +1,57 @@
+<div class="analytics-page">
+  <div class="header">
+    <div class="header-content">
+      <button class="btn-icon back-button" (click)="goBack()" title="Back to Home">
+        <lucide-icon [img]="ChevronLeft" class="w-5 h-5"></lucide-icon>
+      </button>
+      <h1>API Performance Analytics</h1>
+    </div>
+  </div>
+
+  <div style="display: block; width: 100%; height: 400px; margin-bottom: 20px;">
+    <canvas id="apiLineChart"></canvas>
+  </div>
+
+  <div class="content">
+    <div *ngIf="isLoading()" class="loading-state">
+      <lucide-icon [img]="Activity" class="spin-icon"></lucide-icon>
+      <p>Fetching server stats...</p>
+    </div>
+
+    <div *ngIf="errorMessage()" class="error-state">
+      <p>{{ errorMessage() }}</p>
+      <button class="btn btn-outline" (click)="ngOnInit()">Retry</button>
+    </div>
+
+    <div *ngIf="!isLoading() && !errorMessage()" class="dashboard-panel">
+      <div class="panel-header">
+        <lucide-icon [img]="Server" class="w-5 h-5"></lucide-icon>
+        <h2>Endpoint Execution Times</h2>
+      </div>
+
+      <div class="table-container">
+        <table class="stats-table">
+          <thead>
+          <tr>
+            <th>Method Name</th>
+            <th>Total Calls</th>
+            <th>Avg Duration (ms)</th>
+            <th>Max Duration (ms)</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr *ngFor="let stat of stats()">
+            <td class="method-name">{{ stat.method }}</td>
+            <td>{{ stat.calls }}</td>
+            <td>{{ stat.avgMs | number:'1.0-2' }}</td>
+            <td [class.high-latency]="stat.maxMs > 1000">{{ stat.maxMs | number:'1.0-2' }}</td>
+          </tr>
+          <tr *ngIf="stats().length === 0">
+            <td colspan="4" class="empty-state">No API calls recorded yet.</td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
