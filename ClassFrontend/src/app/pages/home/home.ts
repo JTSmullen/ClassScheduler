@@ -88,11 +88,8 @@ export class Home implements OnInit {
     const newScheduleRequest = { name: this.scheduleName };
 
     this.http
-<<<<<<< HEAD
       .post<any>('http://localhost:8080/api/v1/schedule/create', newSchedule)
-=======
       .post<any>('https://lfrgiy6ixwc3psnimphcam4npa0rxxbq.lambda-url.us-east-2.on.aws/api/v1/schedule/create', newScheduleRequest)
->>>>>>> main
       .subscribe({
         next: (response) => {
           this.loading = false;
