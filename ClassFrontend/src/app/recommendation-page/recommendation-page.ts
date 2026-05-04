@@ -187,24 +187,8 @@ export class RecommendationPage implements OnInit {
     // never sees two in-flight saves simultaneously (which caused false conflicts).
     from(courses).pipe(
       concatMap((course) =>
-        this.recommendationService.searchCourses(course.courseCode, token).pipe(
-          concatMap((searchResponse) => {
-            const matchedCourse = searchResponse.results.find(
-              (c: any) =>
-                c.subject === course.section.subject &&
-                c.number === course.section.number &&
-                c.section === course.section.section
-            );
-            if (!matchedCourse) {
-              console.warn(`Could not find section for ${course.courseCode}`);
-              return of(null);
-            }
-            return this.recommendationService
-              .addCourseToSchedule(scheduleId, matchedCourse.id, token)
-              .pipe(
-                concatMap(() => of(null)),
-              );
-          }),
+        this.recommendationService.addCourseToSchedule(scheduleId, course.courseId, token).pipe(
+          concatMap(() => of(null)),
         )
       )
     ).subscribe({
