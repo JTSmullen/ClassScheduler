@@ -14,7 +14,9 @@ export const serverRoutes: ServerRoute[] = [
   { path: 'schedule', renderMode: RenderMode.Client },
   { path: 'create', renderMode: RenderMode.Client },
   { path: 'recommendations', renderMode: RenderMode.Client },
+  { path: 'recommendations/**', renderMode: RenderMode.Client },
 
-  // Catch-all falls back to server rendering for any unknown paths.
-  { path: '**', renderMode: RenderMode.Server }
+  // Keep unknown and redirected SPA paths client-rendered to avoid
+  // hydration lockups when route normalization adds a trailing slash.
+  { path: '**', renderMode: RenderMode.Client }
 ];

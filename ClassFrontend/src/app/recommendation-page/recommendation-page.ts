@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -9,8 +9,6 @@ import {
   RecommendationResponse,
 } from './recommendation.service';
 
-// This component handles the recommendation request flow:
-// 1) load dropdown options, 2) collect user inputs, 3) call backend, 4) render results.
 @Component({
   selector: 'app-recommendation-page',
   standalone: true,
@@ -19,8 +17,12 @@ import {
   styleUrl: './recommendation-page.sass',
 })
 export class RecommendationPage implements OnInit {
-  // Raw text from the textarea. It is transformed into a string[] by parsedCourseCodes.
-  completedCoursesText = '';
+  // Backing field for the textarea input
+  private _completedCoursesText = '';
+  
+  // Stored array to prevent infinite change detection loops
+  parsedCourseCodes: string[] = [];
+
   // Selected values for the two dropdowns.
   selectedProgramCode = '';
   selectedSemester = '';
@@ -40,24 +42,34 @@ export class RecommendationPage implements OnInit {
 
   constructor(
     private router: Router,
-    private recommendationService: RecommendationService
+    private recommendationService: RecommendationService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
-    // Gate this page behind login presence.
-    const token = this.getAuthToken();
-    if (!token) {
-      this.router.navigate(['/login']);
-      return;
-    }
+    // SSR SAFETY GUARD: Prevent the Node.js server from running this block.
+    // If the server runs this, it sees no token, redirects to /login, and sends the wrong HTML,
+    // which causes Angular to throw a Hydration Mismatch and permanently freeze the UI.
+    if (typeof window !== 'undefined') {
+      const token = this.getAuthToken();
+      if (!token) {
+        this.router.navigate(['/login']);
+        return;
+      }
 
-    // Initial page data load for semester and program sheet dropdowns.
-    this.loadOptions(token);
+      // Initial page data load for semester and program sheet dropdowns.
+      this.loadOptions(token);
+    }
   }
 
-  get parsedCourseCodes(): string[] {
-    // Convert comma-separated user input into a normalized array.
-    return this.completedCoursesText
+  // Intercepts the ngModel updates from the HTML so we only calculate the array 
+  // exactly when the user types, instead of infinitely on every UI tick.
+  get completedCoursesText(): string {
+    return this._completedCoursesText;
+  }
+  set completedCoursesText(value: string) {
+    this._completedCoursesText = value;
+    this.parsedCourseCodes = value
       .split(',')
       .map((course) => course.trim().toUpperCase())
       .filter((course) => course.length > 0);
@@ -106,11 +118,13 @@ export class RecommendationPage implements OnInit {
         next: (response) => {
           this.recommendationResponse = response;
           this.generatingSchedule = false;
+          this.cdr.markForCheck();
         },
         error: (error) => {
           this.generatingSchedule = false;
           this.requestError =
             error?.error?.detail || error?.error?.message || 'Unable to generate schedule right now.';
+          this.cdr.markForCheck();
         },
       });
   }
@@ -134,12 +148,14 @@ export class RecommendationPage implements OnInit {
         }
 
         this.loadingOptions = false;
+        this.cdr.markForCheck();
       },
       error: (error) => {
         this.loadingOptions = false;
         // Prefer backend-provided details, then fallback to a generic message.
         this.optionsError =
           error?.error?.detail || error?.error?.message || 'Could not load recommendation options.';
+        this.cdr.markForCheck();
       },
     });
   }

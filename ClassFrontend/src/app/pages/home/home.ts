@@ -19,6 +19,7 @@ export class Home implements OnInit {
   scheduleName = '';
   loading = false;
   errorMessage = '';
+  welcomeName = '';
 
   // Form fields for login (if needed on this page)
   username = '';
@@ -36,6 +37,15 @@ export class Home implements OnInit {
     if (isPlatformBrowser(this.platformId)) {
       this.loadSchedules();
     }
+    const nameForWelcome = localStorage.getItem('current_user')
+    if (nameForWelcome) {
+        try {
+          const user = JSON.parse(nameForWelcome);
+          this.welcomeName = user.firstName;
+        } catch (e) {
+          console.error('Failed to parse user from storage', e);
+        }
+      }
   }
 
   /**
