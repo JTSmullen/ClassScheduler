@@ -11,7 +11,7 @@ export interface MethodStatDTO {
 
 @Injectable({ providedIn: 'root' })
 export class AnalyticsService {
-  private readonly ANALYTICS_URL = 'http://localhost:8080/api/v1/analytics/stats';
+  private readonly ANALYTICS_URL = 'https://lfrgiy6ixwc3psnimphcam4npa0rxxbq.lambda-url.us-east-2.on.aws/api/v1/analytics/stats';
 
   constructor(private http: HttpClient) {}
 

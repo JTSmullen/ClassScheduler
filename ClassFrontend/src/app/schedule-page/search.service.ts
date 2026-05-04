@@ -64,7 +64,7 @@ export interface CourseSectionDTO {
   providedIn: 'root',
 })
 export class SearchService {
-  private readonly SEARCH_URL = 'http://localhost:8080/api/v1/search';
+  private readonly SEARCH_URL = 'https://lfrgiy6ixwc3psnimphcam4npa0rxxbq.lambda-url.us-east-2.on.aws/api/v1/search';
 
   constructor(private http: HttpClient) {}
 

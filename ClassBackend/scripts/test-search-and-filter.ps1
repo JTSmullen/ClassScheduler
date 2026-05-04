@@ -7,7 +7,7 @@ Write-Host "Username: $uniqueUser"
 Write-Host "Email:    $uniqueEmail"
 Write-Host "------------------------------"
 
-$baseUrl = "http://localhost:8080/api/v1"
+$baseUrl = "https://lfrgiy6ixwc3psnimphcam4npa0rxxbq.lambda-url.us-east-2.on.aws/api/v1"
 
 # ==========================================
 # 1. REGISTER USER
